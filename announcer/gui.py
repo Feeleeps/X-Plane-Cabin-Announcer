@@ -23,7 +23,7 @@ ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
 class CabinAnnouncerGUI:
-    def __init__(self, root, audio_engine, pack_manager, config_manager, rule_engine, udp_client, base_dir):
+    def __init__(self, root, audio_engine, pack_manager, config_manager, rule_engine, udp_client, base_dir, detector=None, auto_detect_enabled=True):
         self.root = root
         self.audio = audio_engine
         self.packs = pack_manager
@@ -31,6 +31,11 @@ class CabinAnnouncerGUI:
         self.rule_engine = rule_engine
         self.udp = udp_client
         self.base_dir = base_dir
+        self.detector = detector
+        self.initial_auto_detect = auto_detect_enabled
+        self._detect_counter = 0
+        self._last_detected_livery = None
+        self._last_detected_acf = None
 
         self.settings_file = os.path.join(self.base_dir, "settings.json")
         self.settings = self._load_settings()
@@ -221,24 +226,38 @@ class CabinAnnouncerGUI:
         btn_open_cfg = ctk.CTkButton(row_config, text="📂", width=34, corner_radius=8, fg_color=self.c["btn_navy"], hover_color=self.c["btn_navy_hover"], command=self._open_configs_dir)
         btn_open_cfg.grid(row=0, column=2, padx=(0, 4))
         btn_ref_cfg = ctk.CTkButton(row_config, text="🔄", width=34, corner_radius=8, fg_color=self.c["btn_navy"], hover_color=self.c["btn_navy_hover"], command=self._refresh_configs)
-        btn_ref_cfg.grid(row=0, column=3)
+        btn_ref_cfg.grid(row=0, column=3, padx=(0, 4))
+        btn_edit_cfg = ctk.CTkButton(row_config, text="✏️ Editor", width=68, corner_radius=8, fg_color="#1e3a5f", hover_color="#2563eb", font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"), command=self._open_web_editor)
+        btn_edit_cfg.grid(row=0, column=4)
 
         self.lbl_config_info = ctk.CTkLabel(card, text="Active Profile: Generic X-Plane 12 Airliner", font=ctk.CTkFont(family="Segoe UI", size=11), text_color=self.c["accent"])
         self.lbl_config_info.pack(anchor="w", padx=16, pady=(1, 8))
 
-        # --- Auto Triggers Switch & Reset button ---
+        # --- Auto Triggers, Auto-Detect & Reset button ---
         row_actions = ctk.CTkFrame(card, fg_color="transparent")
         row_actions.pack(fill="x", padx=16, pady=(4, 12))
 
         self.sw_auto_trigger = ctk.CTkSwitch(
             row_actions,
-            text="Automatic Dataref Triggers",
+            text="Dataref Triggers",
             command=self._on_toggle_auto,
             progress_color=self.c["accent"],
-            font=ctk.CTkFont(family="Segoe UI", size=12)
+            font=ctk.CTkFont(family="Segoe UI", size=11)
         )
-        self.sw_auto_trigger.pack(side="left")
+        self.sw_auto_trigger.pack(side="left", padx=(0, 10))
         self.sw_auto_trigger.select()
+
+        self.sw_auto_detect = ctk.CTkSwitch(
+            row_actions,
+            text="Auto-Detect Livery/Aircraft",
+            progress_color=self.c["accent"],
+            font=ctk.CTkFont(family="Segoe UI", size=11)
+        )
+        self.sw_auto_detect.pack(side="left")
+        if self.initial_auto_detect:
+            self.sw_auto_detect.select()
+        else:
+            self.sw_auto_detect.deselect()
 
         btn_reset = ctk.CTkButton(
             row_actions,
@@ -511,6 +530,9 @@ class CabinAnnouncerGUI:
             count = len(self.packs.get_sound_files_in_pack(choice))
             self.lbl_airline_info.configure(text=f"Active Pack: {choice} ({count} audio files)")
             self.append_log(f"Selected Airline Sound Pack: {choice} ({count} files)")
+            # If a livery is active in X-Plane, remember this manual mapping for the user's install
+            if self.detector and self.detector.detected_livery_name and choice != "DEFAULT":
+                self.detector.save_mapping(self.detector.detected_livery_name, choice)
             self._save_settings()
 
     def _on_config_selected(self, choice):
@@ -538,6 +560,8 @@ class CabinAnnouncerGUI:
         os.makedirs(self.packs.base_airlines_dir, exist_ok=True)
         if sys.platform == "win32":
             os.startfile(self.packs.base_airlines_dir)
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", self.packs.base_airlines_dir])
         else:
             subprocess.Popen(["xdg-open", self.packs.base_airlines_dir])
 
@@ -545,8 +569,15 @@ class CabinAnnouncerGUI:
         os.makedirs(self.configs.configs_dir, exist_ok=True)
         if sys.platform == "win32":
             os.startfile(self.configs.configs_dir)
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", self.configs.configs_dir])
         else:
             subprocess.Popen(["xdg-open", self.configs.configs_dir])
+
+    def _open_web_editor(self):
+        from announcer.editor_server import start_editor_server
+        url = start_editor_server(self.base_dir, port=8765, open_browser=True, config_manager=self.configs)
+        self.append_log(f"🌐 Opened Visual Config Editor: {url}")
 
     def _refresh_packs(self):
         self.packs.rescan()
@@ -697,7 +728,42 @@ class CabinAnnouncerGUI:
         if belts is not None:
             self.telem_labels["seatbelts"].configure(text="ON" if belts >= 0.5 else "OFF")
 
+        # 4. Periodic Auto-Detection of Aircraft & Livery (every ~4 seconds)
+        self._detect_counter += 1
+        if self._detect_counter >= 16:
+            self._detect_counter = 0
+            if self.detector and self.sw_auto_detect.get() == 1:
+                self._check_auto_detect()
+
         self.root.after(250, self._update_loop)
+
+    def _check_auto_detect(self):
+        """Checks for new aircraft or livery selection from X-Plane and automatically updates."""
+        try:
+            res = self.detector.run_detection(self.udp)
+            new_acf = res.get("acf_path")
+            new_livery = res.get("livery_name")
+            matched_config = res.get("matched_config")
+            matched_airline = res.get("matched_airline")
+
+            # Update Aircraft Profile if changed
+            if matched_config and matched_config != self.opt_config.get():
+                if new_acf != self._last_detected_acf:
+                    self._last_detected_acf = new_acf
+                    self.opt_config.set(matched_config)
+                    self._on_config_selected(matched_config)
+                    self.append_log(f"✨ Auto-detected Aircraft Profile: '{matched_config}'")
+
+            # Update Airline Sound Pack if changed
+            if matched_airline and matched_airline != self.opt_airline.get():
+                if new_livery != self._last_detected_livery:
+                    self._last_detected_livery = new_livery
+                    self.opt_airline.set(matched_airline)
+                    self._on_airline_selected(matched_airline)
+                    self.append_log(f"✨ Auto-detected Airline Pack: '{matched_airline}' (from livery '{new_livery}')")
+
+        except Exception as e:
+            pass
 
     def _on_close(self):
         self._save_settings()

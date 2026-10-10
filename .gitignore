@@ -18,6 +18,7 @@ env/
 # Local runtime & user settings
 # ==========================================
 settings.json
+livery_mappings.json
 *.log
 
 # ==========================================

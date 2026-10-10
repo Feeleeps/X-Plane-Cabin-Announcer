@@ -1,64 +1,66 @@
 ========================================================================
-X-PLANE CABIN ANNOUNCER - AIRCRAFT CONFIGURATION DIRECTORY
+X-PLANE CABIN ANNOUNCER - SIMPLIFIED AIRCRAFT CONFIG GUIDE
 ========================================================================
 
-Each aircraft has its own configuration file (.json or .yaml) specifying
-when each announcement sound should be played based on X-Plane datarefs.
+Aircraft config files (.json or .yaml) tell the announcer when each sound
+should be played based on X-Plane datarefs.
 
-FILE FORMAT:
-------------
+SIMPLIFIED FORMAT EXAMPLE:
+-------------------------
 {
-  "name": "My Custom Aircraft",
-  "author": "Your Name",
-  "description": "Rules for my custom airliner",
+  "name": "My Custom Airliner",
   "aircraft_icao_match": ["A320", "A321"],
-  "rules": [
-    {
-      "id": "safety_briefing_taxi",
-      "sound_name": "SafetyBriefing",
-      "description": "Safety demo during taxi out",
-      "conditions": [
-        {
-          "dataref": "sim/flightmodel/failures/onground_any",
-          "op": "==",
-          "value": 1.0
-        },
-        {
-          "dataref": "sim/flightmodel/position/groundspeed",
-          "op": ">",
-          "value": 1.5
-        },
-        {
-          "dataref": "sim/cockpit2/switches/beacon_on",
-          "op": "==",
-          "value": 1.0
-        }
+  "triggers": {
+    "BoardingWelcome": {
+      "when": [
+        "sim/flightmodel/failures/onground_any == 1",
+        "AirbusFBW/ParkBrake >= 0.9",
+        "AirbusFBW/BeaconLightsOn == 0"
       ],
-      "delay_seconds": 3,
-      "cooldown_seconds": 300,
-      "once_per_flight": true
+      "delay": 6
+    },
+    "ArmDoors": {
+      "when": [
+        "sim/flightmodel/failures/onground_any == 1",
+        "AirbusFBW/BeaconLightsOn -> 1"
+      ],
+      "delay": 2
+    },
+    "SafetyBriefing": {
+      "when": [
+        "sim/flightmodel/failures/onground_any == 1",
+        "sim/flightmodel/position/groundspeed > 1.5",
+        "AirbusFBW/BeaconLightsOn == 1"
+      ],
+      "delay": 4
+    },
+    "AfterTakeoff": {
+      "when": "sim/flightmodel/position/y_agl climbs_past 457.2",
+      "delay": 4
+    },
+    "FastenSeatbelt": {
+      "when": "AirbusFBW/SeatBeltSignsOn -> 1",
+      "delay": 1,
+      "cooldown": 60,
+      "repeat": true
     }
-  ]
+  }
 }
 
-AVAILABLE OPERATORS ("op"):
----------------------------
-- "=="              Equal to value (e.g. 1.0)
-- "!="              Not equal to value
-- ">"               Greater than value
-- ">="              Greater than or equal to value
-- "<"               Less than value
-- "<="              Less than or equal to value
-- "between"         Value inside range [min, max]
-- "transition_to"   Triggers when dataref flips from another value to this value
-- "increased_past"  Triggers when climbing through a value (was <=, now >)
-- "decreased_past"  Triggers when descending through a value (was >=, now <)
+AVAILABLE OPERATORS IN EXPRESSIONS ("when"):
+--------------------------------------------
+- "dataref == value"          Equal (e.g. "sim/cockpit2/switches/beacon_on == 1")
+- "dataref != value"          Not equal
+- "dataref > value"           Greater than (e.g. "groundspeed > 1.5")
+- "dataref >= value"          Greater than or equal
+- "dataref < value"           Less than
+- "dataref <= value"          Less than or equal
+- "dataref -> value"          Rising edge / transition to (e.g. switch flipped ON)
+- "dataref climbs_past val"   Climbing through an altitude (MSL or AGL)
+- "dataref descends_past val" Descending through an altitude (MSL or AGL)
 
-RULE PROPERTIES:
-----------------
-- id:               Unique string ID for the rule.
-- sound_name:       Fenix sound name (e.g. SafetyBriefing, ArmDoors, TopOfClimbPilot).
-- conditions:       Array of condition objects (all conditions must be true = AND).
-- delay_seconds:    Seconds to wait after condition is met before playing audio.
-- cooldown_seconds: Minimum seconds before this rule can trigger again.
-- once_per_flight:  If true, triggers only once per flight until flight reset.
+OPTIONAL TRIGGER SETTINGS:
+--------------------------
+- "delay":      Seconds to wait after condition is met before playing (default: 0).
+- "repeat":     true if the sound can play multiple times per flight (e.g. seatbelts).
+- "cooldown":   Minimum seconds before it can trigger again (default: 300).

@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>X-Plane Cabin Announcer - Aircraft Config Editor</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --card-inner: #0f141c;
+      --border: #30363d;
+      --fg: #f0f6fc;
+      --muted: #8b949e;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --accent-dark: #0369a1;
+      --navy: #1e293b;
+      --green: #10b981;
+      --red: #f87171;
+      --red-bg: #450a0a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo-box { display: flex; align-items: center; gap: 12px; }
+    .logo-box h1 { font-size: 1.15rem; font-weight: 700; color: #fff; }
+    .logo-box span { font-size: 0.8rem; color: var(--muted); }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+    select, input, button {
+      background: var(--navy);
+      color: var(--fg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 0.85rem;
+      font-family: inherit;
+    }
+    select:focus, input:focus { outline: none; border-color: var(--accent); }
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    button:hover { background: #334155; }
+    button.btn-primary { background: var(--accent-dark); border-color: var(--accent); color: #fff; }
+    button.btn-primary:hover { background: var(--accent-hover); }
+    button.btn-green { background: #064e3b; border-color: var(--green); color: #6ee7b7; }
+    button.btn-green:hover { background: #047857; }
+    button.btn-danger { background: var(--red-bg); border-color: var(--red); color: #fca5a5; }
+    button.btn-danger:hover { background: #7f1d1d; }
+    button.btn-sm { padding: 4px 8px; font-size: 0.78rem; border-radius: 6px; }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 16px;
+      padding: 16px 24px;
+      max-width: 1700px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    @media (max-width: 1050px) {
+      main { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .panel-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: var(--card-inner);
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .field-group { display: flex; flex-direction: column; gap: 4px; }
+    .field-group label { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+    .field-group input { width: 100%; }
+
+    .quick-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 10px;
+      background: var(--card-inner);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .chip {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: #1e293b;
+      color: #bae6fd;
+      cursor: pointer;
+      border: 1px solid #334155;
+      transition: all 0.15s;
+    }
+    .chip:hover { background: var(--accent-dark); color: #fff; }
+
+    .triggers-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .trigger-card {
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border-left: 4px solid var(--accent);
+    }
+    .trigger-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .trigger-name-badge {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .condition-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .condition-row {
+      display: grid;
+      grid-template-columns: 140px 1fr 90px 80px 30px;
+      gap: 6px;
+      align-items: center;
+    }
+    .settings-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding-top: 6px;
+      border-top: 1px dashed #21262d;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .settings-row input[type="number"] { width: 65px; padding: 3px 6px; }
+    .settings-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--fg); }
+
+    .preview-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    pre {
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      color: #a5f3fc;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      overflow: auto;
+      flex: 1;
+      min-height: 500px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid var(--green);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-weight: 600;
+      display: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-box">
+      <h1>✈️ X-Plane Cabin Announcer</h1>
+      <span>Aircraft Dataref Config Editor</span>
+    </div>
+    <div class="header-actions">
+      <select id="loadConfigSelect">
+        <option value="">📂 Load Existing Profile...</option>
+      </select>
+      <button class="btn-primary" onclick="downloadJSON()">📥 Download JSON</button>
+      <button class="btn-green" onclick="saveDirectly()">💾 Save to Aircraft Configs</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Left Column: Visual Form Builder -->
+    <div class="panel">
+      <div class="panel-title">
+        <span>⚙️ Aircraft Profile Settings</span>
+        <button class="btn-sm" onclick="resetForm()">🔄 Blank Template</button>
+      </div>
+
+      <div class="meta-grid">
+        <div class="field-group">
+          <label>Aircraft Name / Profile Title</label>
+          <input type="text" id="acfName" value="ToLiss A320 Family (A319/A320/A321)" placeholder="e.g. ToLiss A320 Family" oninput="updateLiveJSON()">
+        </div>
+        <div class="field-group">
+          <label>Config Author</label>
+          <input type="text" id="acfAuthor" value="X-Plane Cabin Announcer" oninput="updateLiveJSON()">
+        </div>
+        <div class="field-group" style="grid-column: span 2;">
+          <label>Aircraft ICAO Matches (comma-separated for auto-detect)</label>
+          <input type="text" id="acfIcaos" value="A319, A320, A321" placeholder="e.g. A320, A321, B738" oninput="updateLiveJSON()">
+        </div>
+      </div>
+
+      <div class="panel-title" style="margin-top: 6px;">
+        <span>🎙️ Announcement Triggers</span>
+        <button class="btn-sm btn-primary" onclick="promptAddTrigger()">➕ Add Trigger</button>
+      </div>
+
+      <!-- Quick Add Fenix Buttons -->
+      <div style="font-size: 0.75rem; color: var(--muted); margin-bottom: -6px;">Click to quickly add standard Fenix A320 announcement triggers:</div>
+      <div class="quick-chips" id="quickChips"></div>
+
+      <!-- Triggers List Container -->
+      <div class="triggers-list" id="triggersContainer"></div>
+    </div>
+
+    <!-- Right Column: Live Code Preview -->
+    <div class="panel preview-box">
+      <div class="panel-title">
+        <span>📄 Live Configuration Preview (.json)</span>
+        <button class="btn-sm" onclick="copyJSON()">📋 Copy to Clipboard</button>
+      </div>
+      <pre id="jsonPreview"></pre>
+    </div>
+  </main>
+
+  <div class="toast" id="toastBox">Saved successfully!</div>
+
+  <script>
+    // Standard Fenix sound keys
+    const STANDARD_SOUNDS = [
+      "BoardingWelcome", "ArmDoors", "SafetyBriefing", "CrewSeatsTakeoff",
+      "AfterTakeoff", "FastenSeatbelt", "TopOfClimbPilot", "TopOfDescentPilot",
+      "Descent", "AfterLanding", "DisarmDoors", "Deboarding", "BoardingMusic"
+    ];
+
+    // Common standard X-Plane dataref presets with human-friendly descriptions
+    const DATAREF_PRESETS = [
+      { label: "⚡ Custom Dataref...", dref: "" },
+      { label: "🛞 On Ground (1=Yes, 0=Airborne)", dref: "sim/flightmodel/failures/onground_any" },
+      { label: "🚗 Ground Speed (m/s)", dref: "sim/flightmodel/position/groundspeed" },
+      { label: "📏 Altitude AGL (meters)", dref: "sim/flightmodel/position/y_agl" },
+      { label: "🏔️ Altitude MSL (meters)", dref: "sim/flightmodel/position/elevation" },
+      { label: "💡 Beacon Light (1=On, 0=Off)", dref: "sim/cockpit2/switches/beacon_on" },
+      { label: "🅿️ Parking Brake (0.0 to 1.0)", dref: "sim/cockpit2/controls/parking_brake_ratio" },
+      { label: "🔔 Seatbelt Signs (1=On, 0=Off)", dref: "sim/cockpit2/switches/fasten_seat_belts" },
+      { label: "✈️ ToLiss: Parking Brake", dref: "AirbusFBW/ParkBrake" },
+      { label: "✈️ ToLiss: Beacon Light", dref: "AirbusFBW/BeaconLightsOn" },
+      { label: "✈️ ToLiss: Seatbelt Sign", dref: "AirbusFBW/SeatBeltSignsOn" },
+      { label: "✈️ ToLiss: Strobes (2=On)", dref: "AirbusFBW/StrobeLightsOn" }
+    ];
+
+    // Current config state
+    let state = {
+      name: "ToLiss A320 Family (A319/A320/A321)",
+      author: "X-Plane Cabin Announcer",
+      aircraft_icao_match: ["A319", "A320", "A321"],
+      triggers: {
+        "BoardingWelcome": {
+          when: [
+            "sim/flightmodel/failures/onground_any == 1",
+            "AirbusFBW/ParkBrake >= 0.9",
+            "AirbusFBW/BeaconLightsOn == 0"
+          ],
+          delay: 6
+        },
+        "ArmDoors": {
+          when: [
+            "sim/flightmodel/failures/onground_any == 1",
+            "AirbusFBW/BeaconLightsOn -> 1"
+          ],
+          delay: 2
+        },
+        "SafetyBriefing": {
+          when: [
+            "sim/flightmodel/failures/onground_any == 1",
+            "sim/flightmodel/position/groundspeed > 1.5",
+            "AirbusFBW/BeaconLightsOn == 1"
+          ],
+          delay: 4
+        },
+        "CrewSeatsTakeoff": {
+          when: [
+            "sim/flightmodel/failures/onground_any == 1",
+            "AirbusFBW/StrobeLightsOn -> 2"
+          ],
+          delay: 2
+        },
+        "AfterTakeoff": {
+          when: [
+            "sim/flightmodel/failures/onground_any == 0",
+            "sim/flightmodel/position/y_agl climbs_past 457.2"
+          ],
+          delay: 4
+        },
+        "TopOfClimbPilot": {
+          when: [
+            "sim/flightmodel/failures/onground_any == 0",
+            "sim/flightmodel/position/elevation climbs_past 3048"
+          ],
+          delay: 8
+        },
+        "FastenSeatbelt": {
+          when: [
+            "sim/flightmodel/failures/onground_any == 0",
+            "sim/flightmodel/position/y_agl > 1500",
+            "AirbusFBW/SeatBeltSignsOn -> 1"
+          ],
+          delay: 1,
+          cooldown: 60,
+          repeat: true
+        },
+        "TopOfDescentPilot": {
+          when: [
+            "sim/flightmodel/failures/onground_any == 0",
+            "sim/flightmodel/position/elevation descends_past 3048"
+          ],
+          delay: 5
+        },
+        "AfterLanding": {
+          when: [
+            "sim/flightmodel/failures/onground_any == 1",
+            "sim/flightmodel/position/groundspeed < 15.0"
+          ],
+          delay: 3
+        },
+        "DisarmDoors": {
+          when: [
+            "sim/flightmodel/failures/onground_any == 1",
+            "AirbusFBW/ParkBrake >= 0.9",
+            "AirbusFBW/BeaconLightsOn -> 0"
+          ],
+          delay: 2
+        }
+      }
+    };
+
+    function init() {
+      renderQuickChips();
+      renderTriggers();
+      updateLiveJSON();
+      fetchConfigsList();
+    }
+
+    function renderQuickChips() {
+      const container = document.getElementById("quickChips");
+      container.innerHTML = "";
+      STANDARD_SOUNDS.forEach(sound => {
+        const chip = document.createElement("div");
+        chip.className = "chip";
+        chip.textContent = `+ ${sound}`;
+        chip.onclick = () => addTrigger(sound);
+        container.appendChild(chip);
+      });
+    }
+
+    function renderTriggers() {
+      const container = document.getElementById("triggersContainer");
+      container.innerHTML = "";
+
+      const keys = Object.keys(state.triggers);
+      if (keys.length === 0) {
+        container.innerHTML = `<div style="color:var(--muted); font-size:0.85rem; padding:16px; text-align:center;">No triggers defined yet. Click an announcement above to add one!</div>`;
+        return;
+      }
+
+      keys.forEach(soundName => {
+        const def = state.triggers[soundName];
+        const card = document.createElement("div");
+        card.className = "trigger-card";
+
+        // Normalize when to array
+        let whenList = [];
+        if (typeof def.when === "string") whenList = [def.when];
+        else if (Array.isArray(def.when)) whenList = def.when;
+
+        // Trigger Header
+        const header = document.createElement("div");
+        header.className = "trigger-header";
+        header.innerHTML = `
+          <div class="trigger-name-badge">
+            <span>📢 ${soundName}</span>
+          </div>
+          <button class="btn-sm btn-danger" onclick="removeTrigger('${soundName}')">✕ Remove</button>
+        `;
+        card.appendChild(header);
+
+        // Conditions Section
+        const condContainer = document.createElement("div");
+        condContainer.className = "condition-rows";
+
+        whenList.forEach((condStr, idx) => {
+          const parsed = parseConditionString(condStr);
+          const row = document.createElement("div");
+          row.className = "condition-row";
+
+          // 1. Preset Dropdown
+          const selPreset = document.createElement("select");
+          DATAREF_PRESETS.forEach(p => {
+            const opt = document.createElement("option");
+            opt.value = p.dref;
+            opt.textContent = p.label;
+            if (p.dref === parsed.dref) opt.selected = true;
+            selPreset.appendChild(opt);
+          });
+
+          // 2. Custom Dataref Input
+          const txtDref = document.createElement("input");
+          txtDref.type = "text";
+          txtDref.value = parsed.dref;
+          txtDref.placeholder = "e.g. sim/cockpit2/...";
+
+          selPreset.onchange = () => {
+            if (selPreset.value) txtDref.value = selPreset.value;
+            syncFromUI();
+          };
+          txtDref.oninput = () => syncFromUI();
+
+          // 3. Operator
+          const selOp = document.createElement("select");
+          const ops = [
+            { val: "==", text: "== Equal" },
+            { val: ">", text: "> Greater" },
+            { val: ">=", text: ">= GTE" },
+            { val: "<", text: "< Less" },
+            { val: "<=", text: "<= LTE" },
+            { val: "!=", text: "!= Not Equal" },
+            { val: "->", text: "-> Turns On/Off" },
+            { val: "climbs_past", text: "▲ Climbs Past" },
+            { val: "descends_past", text: "▼ Descends Past" }
+          ];
+          ops.forEach(o => {
+            const opt = document.createElement("option");
+            opt.value = o.val;
+            opt.textContent = o.text;
+            if (o.val === parsed.op) opt.selected = true;
+            selOp.appendChild(opt);
+          });
+          selOp.onchange = () => syncFromUI();
+
+          // 4. Value
+          const txtVal = document.createElement("input");
+          txtVal.type = "text";
+          txtVal.value = parsed.val;
+          txtVal.oninput = () => syncFromUI();
+
+          // 5. Delete button
+          const btnDel = document.createElement("button");
+          btnDel.className = "btn-sm btn-danger";
+          btnDel.textContent = "✕";
+          btnDel.onclick = () => removeCondition(soundName, idx);
+
+          row.appendChild(selPreset);
+          row.appendChild(txtDref);
+          row.appendChild(selOp);
+          row.appendChild(txtVal);
+          row.appendChild(btnDel);
+
+          condContainer.appendChild(row);
+        });
+
+        card.appendChild(condContainer);
+
+        // Add condition button
+        const btnAddCond = document.createElement("button");
+        btnAddCond.className = "btn-sm";
+        btnAddCond.style.alignSelf = "flex-start";
+        btnAddCond.textContent = "+ Add Condition";
+        btnAddCond.onclick = () => addCondition(soundName);
+        card.appendChild(btnAddCond);
+
+        // Settings row (delay, cooldown, repeat)
+        const settingsRow = document.createElement("div");
+        settingsRow.className = "settings-row";
+        const delayVal = def.delay || 0;
+        const coolVal = def.cooldown || 300;
+        const repVal = !!def.repeat;
+
+        settingsRow.innerHTML = `
+          <span>Delay: <input type="number" min="0" value="${delayVal}" id="delay_${soundName}" onchange="syncFromUI()"> s</span>
+          <span>Cooldown: <input type="number" min="0" value="${coolVal}" id="cool_${soundName}" onchange="syncFromUI()"> s</span>
+          <label><input type="checkbox" id="rep_${soundName}" ${repVal ? "checked" : ""} onchange="syncFromUI()"> Repeat per flight</label>
+        `;
+        card.appendChild(settingsRow);
+
+        container.appendChild(card);
+      });
+    }
+
+    function parseConditionString(str) {
+      str = (str || "").trim();
+      let m = str.match(/^(.+?)\s+(climbs_past|descends_past|->|==|!=|>=|<=|>|<)\s*(.+)$/i);
+      if (m) {
+        return { dref: m[1].trim(), op: m[2].trim(), val: m[3].trim() };
+      }
+      return { dref: str, op: "==", val: "1" };
+    }
+
+    function syncFromUI() {
+      state.name = document.getElementById("acfName").value.trim();
+      state.author = document.getElementById("acfAuthor").value.trim();
+      const icaoStr = document.getElementById("acfIcaos").value.trim();
+      state.aircraft_icao_match = icaoStr.split(",").map(s => s.trim()).filter(Boolean);
+
+      const cards = document.querySelectorAll(".trigger-card");
+      const newTriggers = {};
+
+      cards.forEach(card => {
+        const titleBadge = card.querySelector(".trigger-name-badge span").textContent.replace("📢 ", "").trim();
+        const rows = card.querySelectorAll(".condition-row");
+        const whenArr = [];
+
+        rows.forEach(r => {
+          const dref = r.querySelector("input[type='text']").value.trim();
+          const op = r.querySelectorAll("select")[1].value;
+          const val = r.querySelectorAll("input[type='text']")[1].value.trim();
+          if (dref) {
+            whenArr.push(`${dref} ${op} ${val}`);
+          }
+        });
+
+        const delay = parseFloat(document.getElementById(`delay_${titleBadge}`).value) || 0;
+        const cooldown = parseFloat(document.getElementById(`cool_${titleBadge}`).value) || 300;
+        const repeat = document.getElementById(`rep_${titleBadge}`).checked;
+
+        const trigDef = { when: whenArr };
+        if (delay > 0) trigDef.delay = delay;
+        if (cooldown !== 300) trigDef.cooldown = cooldown;
+        if (repeat) trigDef.repeat = true;
+
+        newTriggers[titleBadge] = trigDef;
+      });
+
+      state.triggers = newTriggers;
+      updateLiveJSON();
+    }
+
+    function addTrigger(soundName) {
+      if (state.triggers[soundName]) return;
+      state.triggers[soundName] = {
+        when: ["sim/flightmodel/failures/onground_any == 1"],
+        delay: 2
+      };
+      renderTriggers();
+      updateLiveJSON();
+    }
+
+    function promptAddTrigger() {
+      const name = prompt("Enter sound name (e.g. BoardingComplete, FastenSeatbelt):");
+      if (name) addTrigger(name.trim());
+    }
+
+    function removeTrigger(soundName) {
+      delete state.triggers[soundName];
+      renderTriggers();
+      updateLiveJSON();
+    }
+
+    function addCondition(soundName) {
+      if (!state.triggers[soundName]) return;
+      let whenList = state.triggers[soundName].when;
+      if (typeof whenList === "string") whenList = [whenList];
+      if (!Array.isArray(whenList)) whenList = [];
+      whenList.push("sim/cockpit2/switches/beacon_on == 1");
+      state.triggers[soundName].when = whenList;
+      renderTriggers();
+      updateLiveJSON();
+    }
+
+    function removeCondition(soundName, idx) {
+      if (!state.triggers[soundName]) return;
+      let whenList = state.triggers[soundName].when;
+      if (Array.isArray(whenList)) {
+        whenList.splice(idx, 1);
+        if (whenList.length === 0) whenList = ["sim/flightmodel/failures/onground_any == 1"];
+        state.triggers[soundName].when = whenList;
+        renderTriggers();
+        updateLiveJSON();
+      }
+    }
+
+    function updateLiveJSON() {
+      document.getElementById("jsonPreview").textContent = JSON.stringify(state, null, 2);
+    }
+
+    function copyJSON() {
+      navigator.clipboard.writeText(JSON.stringify(state, null, 2));
+      showToast("JSON copied to clipboard!");
+    }
+
+    function downloadJSON() {
+      const filename = (state.name.replace(/[^a-zA-Z0-9_\-]/g, "_") || "Aircraft_Config") + ".json";
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      showToast(`Downloaded ${filename}`);
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById("toastBox");
+      t.textContent = msg;
+      t.style.display = "block";
+      setTimeout(() => { t.style.display = "none"; }, 2500);
+    }
+
+    function resetForm() {
+      state = {
+        name: "New Custom Airliner",
+        author: "X-Plane Pilot",
+        aircraft_icao_match: [],
+        triggers: {}
+      };
+      document.getElementById("acfName").value = state.name;
+      document.getElementById("acfAuthor").value = state.author;
+      document.getElementById("acfIcaos").value = "";
+      renderTriggers();
+      updateLiveJSON();
+    }
+
+    // Backend API Integrations
+    async function fetchConfigsList() {
+      try {
+        const res = await fetch("/api/configs");
+        if (res.ok) {
+          const files = await res.json();
+          const sel = document.getElementById("loadConfigSelect");
+          sel.innerHTML = `<option value="">📂 Load Existing Profile...</option>`;
+          files.forEach(f => {
+            const opt = document.createElement("option");
+            opt.value = f;
+            opt.textContent = f;
+            sel.appendChild(opt);
+          });
+          sel.onchange = () => {
+            if (sel.value) loadConfigFile(sel.value);
+          };
+        }
+      } catch (e) {
+        console.log("Standalone mode or server not active yet.");
+      }
+    }
+
+    async function loadConfigFile(filename) {
+      try {
+        const res = await fetch(`/api/config?file=${encodeURIComponent(filename)}`);
+        if (res.ok) {
+          const data = await res.json();
+          state = data;
+          document.getElementById("acfName").value = state.name || filename;
+          document.getElementById("acfAuthor").value = state.author || "";
+          document.getElementById("acfIcaos").value = (state.aircraft_icao_match || []).join(", ");
+          renderTriggers();
+          updateLiveJSON();
+          showToast(`Loaded ${filename}`);
+        }
+      } catch (e) {
+        alert("Failed to load config: " + e);
+      }
+    }
+
+    async function saveDirectly() {
+      syncFromUI();
+      let filename = state._filename || ((state.name.replace(/[^a-zA-Z0-9_\-]/g, "_") || "Aircraft_Config") + ".json");
+      if (!filename.endsWith(".json")) filename += ".json";
+
+      try {
+        const res = await fetch("/api/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename: filename, config: state })
+        });
+        if (res.ok) {
+          showToast(`Saved to aircraft_configs/${filename}!`);
+          fetchConfigsList();
+        } else {
+          const err = await res.text();
+          alert("Error saving: " + err);
+        }
+      } catch (e) {
+        alert("Server not responding. You can use 'Download JSON' instead! " + e);
+      }
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>

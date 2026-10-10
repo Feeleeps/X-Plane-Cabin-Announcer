@@ -15,10 +15,13 @@ A cabin announcement companion app and plugin for **X-Plane 12**, designed to pl
   - Store trigger profiles in `aircraft_configs/` (`.json` or `.yaml`).
   - Pre-packaged with configs for **Generic X-Plane 12 Airliners**, **ToLiss A320 Family**, and **Zibo Mod 737-800**.
   - Highly expressive conditions: `==`, `>`, `<`, `transition_to`, `increased_past`, `decreased_past`, delays, cooldowns, and `once_per_flight` protection.
-- **Authentic Cabin PA Speaker DSP Effect**:
-  - Real-time acoustic filter simulating ceiling/overhead small-aperture cabin speakers in an airliner cabin.
-  - Features 4th-order bandpass frequency roll-off, intercom horn presence boost, subtle saturation/drive, and short cabin slapback acoustic reflections.
-  - Includes presets: **Overhead PA (Realistic)**, **Cockpit Intercom**, and **Clean (Hi-Fi)** with real-time intensity control.
+- **Automatic Aircraft & Livery Detection**:
+  - Automatically identifies loaded aircraft and liveries directly from X-Plane 12 (`Log.txt` & UDP datarefs).
+  - Strict matching: matches ONLY if the airline's 3-letter ICAO code (e.g. `EZY`, `BAW`, `DLH`) is in the livery folder name, or if saved in your local `livery_mappings.json` config file.
+  - No complex brand dictionaries to maintain. Unmatched liveries are simply manually selected in the GUI and automatically remembered for future flights.
+- **Startup Splash & Configuration Screen**:
+  - Polished loading screen that initializes modules, verifies the simulator path, and previews detected flight information.
+  - Allows pre-flight confirmation before smoothly transitioning to the main Flight Deck interface.
 - **Modern Flight-Deck CustomTkinter GUI**:
   - Rounded cards, clean cool dark-slate color palette (`#0d1117`, `#161b22`, `#38bdf8`).
   - Real-time status badges for X-Plane 12 UDP connectivity and dynamic flight phase.
