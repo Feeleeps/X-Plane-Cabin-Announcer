@@ -1,0 +1,44 @@
+# ==========================================
+# Byte-compiled / optimized / DLL files
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# ==========================================
+# Virtual environments
+# ==========================================
+.venv/
+venv/
+ENV/
+env/
+
+# ==========================================
+# Local runtime & user settings
+# ==========================================
+settings.json
+*.log
+
+# ==========================================
+# Airline Sound Packs
+# ==========================================
+# Ignore all custom airline folders/files dropped into airlines/
+airlines/*
+
+# Preserve the guide, gitkeep, and the built-in procedural DEFAULT pack
+!airlines/_README_AIRLINES.txt
+!airlines/.gitkeep
+!airlines/DEFAULT/
+!airlines/DEFAULT/**
+
+# Ignore large audio files accidentally placed elsewhere
+*.ogg
+*.mp3
+
+# ==========================================
+# Operating System files
+# ==========================================
+Thumbs.db
+[Dd]esktop.ini
+.DS_Store

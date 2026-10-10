@@ -1,0 +1,135 @@
+{
+  "name": "Generic X-Plane 12 Airliner",
+  "author": "X-Plane Cabin Announcer",
+  "description": "Universal configuration using standard X-Plane 12 datarefs. Compatible with default A330, 737, and third-party airliners.",
+  "aircraft_icao_match": ["B738", "A333", "MD82", "B744", "A320"],
+  "rules": [
+    {
+      "id": "welcome_boarding",
+      "sound_name": "BoardingWelcome",
+      "description": "Boarding Welcome when aircraft is parked at gate with parking brake set",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 1.0 },
+        { "dataref": "sim/cockpit2/controls/parking_brake_ratio", "op": ">=", "value": 0.8 },
+        { "dataref": "sim/cockpit2/switches/beacon_on", "op": "==", "value": 0.0 }
+      ],
+      "delay_seconds": 6,
+      "once_per_flight": true
+    },
+    {
+      "id": "arm_doors",
+      "sound_name": "ArmDoors",
+      "description": "Flight attendants arm doors when beacon light is switched on for pushback / engine start",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 1.0 },
+        { "dataref": "sim/cockpit2/switches/beacon_on", "op": "transition_to", "value": 1.0 }
+      ],
+      "delay_seconds": 2,
+      "once_per_flight": true
+    },
+    {
+      "id": "safety_briefing",
+      "sound_name": "SafetyBriefing",
+      "description": "Safety demonstration plays during taxi out (ground speed > 2 knots and beacon on)",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 1.0 },
+        { "dataref": "sim/flightmodel/position/groundspeed", "op": ">", "value": 1.5 },
+        { "dataref": "sim/cockpit2/switches/beacon_on", "op": "==", "value": 1.0 }
+      ],
+      "delay_seconds": 4,
+      "once_per_flight": true
+    },
+    {
+      "id": "crew_seats_takeoff",
+      "sound_name": "CrewSeatsTakeoff",
+      "description": "Cabin crew seats for takeoff (entering runway / accelerating past 15 knots groundspeed)",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 1.0 },
+        { "dataref": "sim/flightmodel/position/groundspeed", "op": ">", "value": 7.5 }
+      ],
+      "delay_seconds": 2,
+      "once_per_flight": true
+    },
+    {
+      "id": "after_takeoff",
+      "sound_name": "AfterTakeoff",
+      "description": "After takeoff announcement after climbing past 1,500 ft AGL",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 0.0 },
+        { "dataref": "sim/flightmodel/position/y_agl", "op": "increased_past", "value": 457.2 }
+      ],
+      "delay_seconds": 5,
+      "once_per_flight": true
+    },
+    {
+      "id": "top_of_climb",
+      "sound_name": "TopOfClimbPilot",
+      "description": "Captain announcement climbing through 10,000 ft MSL",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 0.0 },
+        { "dataref": "sim/flightmodel/position/elevation", "op": "increased_past", "value": 3048.0 }
+      ],
+      "delay_seconds": 8,
+      "once_per_flight": true
+    },
+    {
+      "id": "seatbelts_cycled_cruise",
+      "sound_name": "FastenSeatbelt",
+      "description": "Seatbelt chime when seatbelt switch is turned ON in cruise",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 0.0 },
+        { "dataref": "sim/flightmodel/position/y_agl", "op": ">", "value": 1500.0 },
+        { "dataref": "sim/cockpit2/switches/fasten_seat_belts", "op": "transition_to", "value": 1.0 }
+      ],
+      "delay_seconds": 1,
+      "cooldown_seconds": 60,
+      "once_per_flight": false
+    },
+    {
+      "id": "top_of_descent",
+      "sound_name": "TopOfDescentPilot",
+      "description": "Descent preparation descending through 10,000 ft MSL",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 0.0 },
+        { "dataref": "sim/flightmodel/position/elevation", "op": "decreased_past", "value": 3048.0 }
+      ],
+      "delay_seconds": 5,
+      "once_per_flight": true
+    },
+    {
+      "id": "approach_cabin_prepare",
+      "sound_name": "Descent",
+      "description": "Cabin preparation for landing when descending below 2,500 ft AGL",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 0.0 },
+        { "dataref": "sim/flightmodel/position/y_agl", "op": "decreased_past", "value": 762.0 }
+      ],
+      "delay_seconds": 3,
+      "once_per_flight": true
+    },
+    {
+      "id": "after_landing",
+      "sound_name": "AfterLanding",
+      "description": "After landing welcome when decelerating on runway (ground speed < 30 knots)",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 1.0 },
+        { "dataref": "sim/flightmodel/position/groundspeed", "op": "<", "value": 15.0 }
+      ],
+      "delay_seconds": 4,
+      "once_per_flight": true
+    },
+    {
+      "id": "disarm_doors",
+      "sound_name": "DisarmDoors",
+      "description": "Cabin crew disarm doors when parking brake is set at gate after landing",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 1.0 },
+        { "dataref": "sim/flightmodel/position/groundspeed", "op": "<", "value": 1.0 },
+        { "dataref": "sim/cockpit2/controls/parking_brake_ratio", "op": ">=", "value": 0.8 },
+        { "dataref": "sim/cockpit2/switches/beacon_on", "op": "transition_to", "value": 0.0 }
+      ],
+      "delay_seconds": 3,
+      "once_per_flight": true
+    }
+  ]
+}

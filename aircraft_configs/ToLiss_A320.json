@@ -1,0 +1,123 @@
+{
+  "name": "ToLiss A320 Family (A319/A320/A321)",
+  "author": "X-Plane Cabin Announcer",
+  "description": "Cabin announcement triggers using ToLiss Airbus FBW custom datarefs.",
+  "aircraft_icao_match": ["A319", "A320", "A321"],
+  "rules": [
+    {
+      "id": "toliss_boarding",
+      "sound_name": "BoardingWelcome",
+      "description": "Boarding welcome when parked with parking brake set and beacon off",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 1.0 },
+        { "dataref": "AirbusFBW/ParkBrake", "op": ">=", "value": 0.9 },
+        { "dataref": "AirbusFBW/BeaconLightsOn", "op": "==", "value": 0.0 }
+      ],
+      "delay_seconds": 6,
+      "once_per_flight": true
+    },
+    {
+      "id": "toliss_arm_doors",
+      "sound_name": "ArmDoors",
+      "description": "Arm doors call when beacon light is switched ON for pushback",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 1.0 },
+        { "dataref": "AirbusFBW/BeaconLightsOn", "op": "transition_to", "value": 1.0 }
+      ],
+      "delay_seconds": 2,
+      "once_per_flight": true
+    },
+    {
+      "id": "toliss_safety_briefing",
+      "sound_name": "SafetyBriefing",
+      "description": "Safety demonstration during taxi out",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 1.0 },
+        { "dataref": "sim/flightmodel/position/groundspeed", "op": ">", "value": 1.5 },
+        { "dataref": "AirbusFBW/BeaconLightsOn", "op": "==", "value": 1.0 }
+      ],
+      "delay_seconds": 4,
+      "once_per_flight": true
+    },
+    {
+      "id": "toliss_crew_seats_takeoff",
+      "sound_name": "CrewSeatsTakeoff",
+      "description": "Cabin crew seats for takeoff (strobe lights ON or runway lineup speed)",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 1.0 },
+        { "dataref": "AirbusFBW/StrobeLightsOn", "op": "transition_to", "value": 2.0 }
+      ],
+      "delay_seconds": 2,
+      "once_per_flight": true
+    },
+    {
+      "id": "toliss_after_takeoff",
+      "sound_name": "AfterTakeoff",
+      "description": "After takeoff announcement climbing through 1,500 ft AGL",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 0.0 },
+        { "dataref": "sim/flightmodel/position/y_agl", "op": "increased_past", "value": 457.2 }
+      ],
+      "delay_seconds": 4,
+      "once_per_flight": true
+    },
+    {
+      "id": "toliss_top_of_climb",
+      "sound_name": "TopOfClimbPilot",
+      "description": "Captain announcement climbing past 10,000 ft MSL",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 0.0 },
+        { "dataref": "sim/flightmodel/position/elevation", "op": "increased_past", "value": 3048.0 }
+      ],
+      "delay_seconds": 8,
+      "once_per_flight": true
+    },
+    {
+      "id": "toliss_seatbelt_ding",
+      "sound_name": "FastenSeatbelt",
+      "description": "Fasten seatbelt chime in cruise",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 0.0 },
+        { "dataref": "sim/flightmodel/position/y_agl", "op": ">", "value": 1500.0 },
+        { "dataref": "AirbusFBW/SeatBeltSignsOn", "op": "transition_to", "value": 1.0 }
+      ],
+      "delay_seconds": 1,
+      "cooldown_seconds": 60,
+      "once_per_flight": false
+    },
+    {
+      "id": "toliss_top_of_descent",
+      "sound_name": "TopOfDescentPilot",
+      "description": "Descent announcement descending past 10,000 ft MSL",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 0.0 },
+        { "dataref": "sim/flightmodel/position/elevation", "op": "decreased_past", "value": 3048.0 }
+      ],
+      "delay_seconds": 5,
+      "once_per_flight": true
+    },
+    {
+      "id": "toliss_after_landing",
+      "sound_name": "AfterLanding",
+      "description": "After landing welcome when slowing down below 30 knots on runway",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 1.0 },
+        { "dataref": "sim/flightmodel/position/groundspeed", "op": "<", "value": 15.0 }
+      ],
+      "delay_seconds": 3,
+      "once_per_flight": true
+    },
+    {
+      "id": "toliss_disarm_doors",
+      "sound_name": "DisarmDoors",
+      "description": "Disarm doors when beacon light switched off at gate",
+      "conditions": [
+        { "dataref": "sim/flightmodel/failures/onground_any", "op": "==", "value": 1.0 },
+        { "dataref": "AirbusFBW/ParkBrake", "op": ">=", "value": 0.9 },
+        { "dataref": "AirbusFBW/BeaconLightsOn", "op": "transition_to", "value": 0.0 }
+      ],
+      "delay_seconds": 2,
+      "once_per_flight": true
+    }
+  ]
+}
