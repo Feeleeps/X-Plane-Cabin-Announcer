@@ -1,83 +1,145 @@
 {
   "name": "ToLiss A320 Family (A319/A320/A321)",
   "author": "X-Plane Cabin Announcer",
-  "aircraft_icao_match": ["A319", "A320", "A321"],
+  "aircraft_icao_match": [
+    "A319",
+    "A320",
+    "A321"
+  ],
+  "hardware_mappings": {
+    "pa_volume_dataref": "AirbusFBW/ACP1RotaryPositions",
+    "pa_volume_index": 7,
+    "cabin_call_annunciator_dataref": "AirbusFBW/CheckCabin",
+    "cabin_ready_command": "AirbusFBW/CheckCabin"
+  },
   "triggers": {
     "BoardingWelcome": {
       "when": [
+        "boarding_started == 1",
         "sim/flightmodel/failures/onground_any == 1",
-        "AirbusFBW/ParkBrake >= 0.9",
+        "AirbusFBW/ParkBrake >= 0.5",
         "AirbusFBW/BeaconLightsOn == 0"
       ],
+      "delay": 6,
+      "repeat": true
+    },
+    "BoardingMusic": {
+      "when": [
+        "boarding_started == 1",
+        "sim/flightmodel/failures/onground_any == 1",
+        "played BoardingWelcome"
+      ],
       "delay": 6
+    },
+    "BoardingComplete": {
+      "when": [
+        "boarding_completed == 1",
+        "sim/flightmodel/failures/onground_any == 1"
+      ],
+      "delay": 2
     },
     "ArmDoors": {
       "when": [
         "sim/flightmodel/failures/onground_any == 1",
-        "AirbusFBW/BeaconLightsOn -> 1"
+        "AirbusFBW/BeaconLightsOn -> 1",
+        "sim/flightmodel/position/groundspeed >= 1"
       ],
       "delay": 2
     },
+    "PreSafetyBriefing": {
+      "when": [
+        "played ArmDoors"
+      ],
+      "delay": 15
+    },
     "SafetyBriefing": {
       "when": [
-        "sim/flightmodel/failures/onground_any == 1",
-        "sim/flightmodel/position/groundspeed > 1.5",
-        "AirbusFBW/BeaconLightsOn == 1"
+        "played PreSafetyBriefing AND (sim/cockpit2/switches/beacon_on == 1 AND AirbusFBW/BeaconLightsOn == 1)"
       ],
-      "delay": 4
+      "delay": 10
+    },
+    "CabinDimTakeoff": {
+      "when": [
+        "sim/flightmodel/failures/onground_any == 1",
+        "played SafetyBriefing",
+        "sim/graphics/scenery/sun_pitch_degrees < 0.0"
+      ],
+      "delay": 100
     },
     "CrewSeatsTakeoff": {
       "when": [
         "sim/flightmodel/failures/onground_any == 1",
-        "AirbusFBW/StrobeLightsOn -> 2"
+        "played SafetyBriefing"
       ],
-      "delay": 2
+      "delay": 150
+    },
+    "CallCabinSecureTakeoff": {
+      "when": [
+        "played CrewSeatsTakeoff",
+        "sim/flightmodel/failures/onground_any == 1"
+      ],
+      "delay": 10
     },
     "AfterTakeoff": {
       "when": [
         "sim/flightmodel/failures/onground_any == 0",
-        "sim/flightmodel/position/y_agl climbs_past 457.2"
+        "sim/cockpit2/gauges/indicators/radio_altimeter_height_ft_pilot climbs_past 1500"
       ],
       "delay": 4
-    },
-    "TopOfClimbPilot": {
-      "when": [
-        "sim/flightmodel/failures/onground_any == 0",
-        "sim/flightmodel/position/elevation climbs_past 3048"
-      ],
-      "delay": 8
     },
     "FastenSeatbelt": {
       "when": [
         "sim/flightmodel/failures/onground_any == 0",
-        "sim/flightmodel/position/y_agl > 1500",
+        "sim/cockpit2/gauges/indicators/altitude_ft_pilot > 5000",
         "AirbusFBW/SeatBeltSignsOn -> 1"
       ],
       "delay": 1,
       "cooldown": 60,
       "repeat": true
     },
-    "TopOfDescentPilot": {
+    "DescentSeatbelts": {
       "when": [
         "sim/flightmodel/failures/onground_any == 0",
-        "sim/flightmodel/position/elevation descends_past 3048"
+        "sim/cockpit2/gauges/indicators/altitude_ft_pilot descends_past 10000"
+      ],
+      "delay": 3
+    },
+    "CallCabinSecureLanding": {
+      "when": [
+        "sim/cockpit2/gauges/indicators/radio_altimeter_height_ft_pilot descends_past 4000",
+        "sim/flightmodel/failures/onground_any == 0"
       ],
       "delay": 5
+    },
+    "CrewSeatsLanding": {
+      "when": [
+        "sim/cockpit2/gauges/indicators/radio_altimeter_height_ft_pilot descends_past 4200"
+      ],
+      "delay": 2
     },
     "AfterLanding": {
       "when": [
         "sim/flightmodel/failures/onground_any == 1",
-        "sim/flightmodel/position/groundspeed < 15.0"
+        "sim/flightmodel/position/groundspeed < 20",
+        "played DescentSeatbelts"
       ],
       "delay": 3
     },
     "DisarmDoors": {
       "when": [
         "sim/flightmodel/failures/onground_any == 1",
-        "AirbusFBW/ParkBrake >= 0.9",
+        "AirbusFBW/ParkBrake >= 0.5",
         "AirbusFBW/BeaconLightsOn -> 0"
       ],
       "delay": 2
+    },
+    "DisembarkStarted": {
+      "when": [
+        "played DisarmDoors",
+        "sim/flightmodel/failures/onground_any == 1",
+        "AirbusFBW/PaxDoorArray[0] >= 0.5"
+      ],
+      "delay": 5
     }
   }
 }

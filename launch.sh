@@ -25,8 +25,10 @@ fi
 echo "Using Python: $($PY_CMD --version)"
 
 # Check and install requirements if needed
-echo "Checking dependencies..."
-$PY_CMD -m pip install -r requirements.txt --quiet
+if ! $PY_CMD -c "import customtkinter, sounddevice, soundfile, scipy, numpy, pygame, yaml, PIL" >/dev/null 2>&1; then
+    echo "Dependencies missing. Installing from requirements.txt..."
+    $PY_CMD -m pip install -r requirements.txt --prefer-binary
+fi
 
 echo "Launching X-Plane Cabin Announcer..."
 $PY_CMD main.py "$@"

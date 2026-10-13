@@ -17,8 +17,13 @@
       --accent-dark: #0369a1;
       --navy: #1e293b;
       --green: #10b981;
+      --green-bg: #064e3b;
       --red: #f87171;
       --red-bg: #450a0a;
+      --amber: #f59e0b;
+      --amber-bg: #451a03;
+      --purple: #a855f7;
+      --purple-bg: #2e1065;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -67,21 +72,37 @@
     button.btn-primary:hover { background: var(--accent-hover); }
     button.btn-green { background: #064e3b; border-color: var(--green); color: #6ee7b7; }
     button.btn-green:hover { background: #047857; }
+    button.btn-purple { background: #3b0764; border-color: var(--purple); color: #e9d5ff; }
+    button.btn-purple:hover { background: #581c87; }
     button.btn-danger { background: var(--red-bg); border-color: var(--red); color: #fca5a5; }
     button.btn-danger:hover { background: #7f1d1d; }
+    button.btn-teal { background: #134e4a; border-color: #14b8a6; color: #99f6e4; }
+    button.btn-teal:hover { background: #0f766e; }
     button.btn-sm { padding: 4px 8px; font-size: 0.78rem; border-radius: 6px; }
+
+    .banner-bar {
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
+      padding: 6px 24px;
+      font-size: 0.78rem;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .banner-bar b { color: var(--accent); }
 
     main {
       flex: 1;
       display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
+      grid-template-columns: 1.25fr 0.75fr;
       gap: 16px;
       padding: 16px 24px;
-      max-width: 1700px;
+      max-width: 1750px;
       width: 100%;
       margin: 0 auto;
     }
-    @media (max-width: 1050px) {
+    @media (max-width: 1150px) {
       main { grid-template-columns: 1fr; }
     }
     .panel {
@@ -112,35 +133,18 @@
       border-radius: 10px;
       border: 1px solid var(--border);
     }
+    .hardware-card {
+      border: 1px solid #1e3a5f;
+      background: #0b1320;
+    }
     .field-group { display: flex; flex-direction: column; gap: 4px; }
     .field-group label { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; }
     .field-group input { width: 100%; }
 
-    .quick-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      padding: 10px;
-      background: var(--card-inner);
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
-    .chip {
-      font-size: 0.75rem;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background: #1e293b;
-      color: #bae6fd;
-      cursor: pointer;
-      border: 1px solid #334155;
-      transition: all 0.15s;
-    }
-    .chip:hover { background: var(--accent-dark); color: #fff; }
-
     .triggers-list {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
     .trigger-card {
       background: var(--card-inner);
@@ -151,11 +155,17 @@
       flex-direction: column;
       gap: 10px;
       border-left: 4px solid var(--accent);
+      transition: all 0.15s ease;
+    }
+    .trigger-card.inactive {
+      opacity: 0.55;
+      border-left-color: #475569;
     }
     .trigger-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 10px;
     }
     .trigger-name-badge {
       font-size: 0.9rem;
@@ -165,16 +175,214 @@
       align-items: center;
       gap: 8px;
     }
-    .condition-rows {
+    .phase-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 12px;
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .phase-Pre-Flight { background: #0c2d48; color: #38bdf8; border-color: #0369a1; }
+    .phase-Departure { background: #2e1065; color: #c084fc; border-color: #6b21a8; }
+    .phase-Climb { background: #064e3b; color: #34d399; border-color: #047857; }
+    .phase-Cruise { background: #1e3a5f; color: #60a5fa; border-color: #2563eb; }
+    .phase-Descent { background: #451a03; color: #fbbf24; border-color: #b45309; }
+    .phase-Approach { background: #4c0519; color: #f43f5e; border-color: #9f1239; }
+    .phase-Arrival { background: #064e3b; color: #6ee7b7; border-color: #059669; }
+
+    .toggle-active {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .toggle-active input[type="checkbox"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+    }
+    /* Jamf Pro Style Smart Group Criteria Table */
+    .jamf-container {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
+      margin-top: 4px;
     }
-    .condition-row {
-      display: grid;
-      grid-template-columns: 140px 1fr 90px 80px 30px;
-      gap: 6px;
+    .jamf-preview-bar {
+      display: flex;
       align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #09121f;
+      border: 1px solid #1e3a5f;
+      border-left: 3px solid #38bdf8;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+    }
+    .jamf-preview-formula {
+      font-family: Consolas, "Liberation Mono", Courier, monospace;
+      color: #7dd3fc;
+      word-break: break-all;
+    }
+    .paren-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 12px;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .paren-valid {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #059669;
+    }
+    .paren-warning {
+      background: #451a03;
+      color: #fcd34d;
+      border: 1px solid #b45309;
+    }
+    .jamf-table {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #0b1320;
+      overflow-x: auto;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .jamf-header {
+      display: grid;
+      grid-template-columns: 55px minmax(220px, 1.4fr) 130px minmax(140px, 1.2fr) 55px 95px 36px;
+      gap: 6px;
+      padding: 7px 10px;
+      background: #141f30;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      text-transform: uppercase;
+      user-select: none;
+    }
+    .jamf-header .center {
+      justify-content: center;
+      text-align: center;
+    }
+    .jamf-rows-box {
+      display: flex;
+      flex-direction: column;
+    }
+    .jamf-row {
+      display: grid;
+      grid-template-columns: 55px minmax(220px, 1.4fr) 130px minmax(140px, 1.2fr) 55px 95px 36px;
+      gap: 6px;
+      padding: 6px 10px;
+      align-items: center;
+      border-bottom: 1px solid rgba(48, 54, 61, 0.45);
+      background: transparent;
+      transition: background 0.12s ease;
+    }
+    .jamf-row:last-child {
+      border-bottom: none;
+    }
+    .jamf-row:hover {
+      background: rgba(56, 189, 248, 0.035);
+    }
+    .jamf-parens {
+      font-family: monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #38bdf8;
+      text-align: center;
+      padding: 4px 2px;
+      background: #0d1a2d;
+      border: 1px solid #1e3a5f;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .jamf-crit-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .jamf-crit-select, .jamf-op-select, .jamf-logic-select, .jamf-ann-select {
+      width: 100%;
+      padding: 5px 8px;
+      font-size: 0.8rem;
+    }
+    .jamf-logic-select {
+      font-weight: 700;
+      color: #38bdf8;
+      background: #0f2744;
+      border-color: #1e3a5f;
+    }
+    .jamf-custom-box {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+    }
+    .jamf-custom-dref {
+      flex: 1;
+      min-width: 0;
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: #f0f6fc;
+      background: #070c14;
+      border: 1px solid #1e3a5f;
+      border-radius: 4px;
+      padding: 4px 6px;
+    }
+    .jamf-custom-index {
+      width: 65px;
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: #38bdf8;
+      background: #070c14;
+      border: 1px solid #1e3a5f;
+      border-radius: 4px;
+      padding: 4px 4px;
+      text-align: center;
+    }
+    .jamf-val-box {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+    }
+    .jamf-val-box input {
+      flex: 1;
+      min-width: 0;
+      padding: 5px 8px;
+      font-size: 0.8rem;
+    }
+    .jamf-val-box span {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .jamf-btn-add {
+      align-self: flex-start;
+      margin-top: 4px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #f0f6fc;
+      font-weight: 600;
+    }
+    .jamf-btn-add:hover {
+      background: #334155;
+      border-color: #475569;
     }
     .settings-row {
       display: flex;
@@ -184,6 +392,7 @@
       border-top: 1px dashed #21262d;
       font-size: 0.8rem;
       color: var(--muted);
+      flex-wrap: wrap;
     }
     .settings-row input[type="number"] { width: 65px; padding: 3px 6px; }
     .settings-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--fg); }
@@ -192,6 +401,9 @@
       flex: 1;
       display: flex;
       flex-direction: column;
+      position: sticky;
+      top: 65px;
+      max-height: calc(100vh - 85px);
     }
     pre {
       background: var(--card-inner);
@@ -204,7 +416,7 @@
       line-height: 1.45;
       overflow: auto;
       flex: 1;
-      min-height: 500px;
+      min-height: 400px;
       white-space: pre-wrap;
       word-break: break-all;
     }
@@ -243,6 +455,7 @@
   <main>
     <!-- Left Column: Visual Form Builder -->
     <div class="panel">
+      <!-- Aircraft Profile Info -->
       <div class="panel-title">
         <span>⚙️ Aircraft Profile Settings</span>
         <button class="btn-sm" onclick="resetForm()">🔄 Blank Template</button>
@@ -251,26 +464,59 @@
       <div class="meta-grid">
         <div class="field-group">
           <label>Aircraft Name / Profile Title</label>
-          <input type="text" id="acfName" value="ToLiss A320 Family (A319/A320/A321)" placeholder="e.g. ToLiss A320 Family" oninput="updateLiveJSON()">
+          <input type="text" id="acfName" value="ToLiss A320 Family (A319/A320/A321)" placeholder="e.g. ToLiss A320 Family" oninput="syncFromUI()">
         </div>
         <div class="field-group">
           <label>Config Author</label>
-          <input type="text" id="acfAuthor" value="X-Plane Cabin Announcer" oninput="updateLiveJSON()">
+          <input type="text" id="acfAuthor" value="X-Plane Cabin Announcer" oninput="syncFromUI()">
         </div>
         <div class="field-group" style="grid-column: span 2;">
           <label>Aircraft ICAO Matches (comma-separated for auto-detect)</label>
-          <input type="text" id="acfIcaos" value="A319, A320, A321" placeholder="e.g. A320, A321, B738" oninput="updateLiveJSON()">
+          <input type="text" id="acfIcaos" value="A319, A320, A321" placeholder="e.g. A320, A321, B738" oninput="syncFromUI()">
         </div>
       </div>
 
+      <!-- Cockpit Hardware & Knobs Mapping -->
       <div class="panel-title" style="margin-top: 6px;">
-        <span>🎙️ Announcement Triggers</span>
-        <button class="btn-sm btn-primary" onclick="promptAddTrigger()">➕ Add Trigger</button>
+        <span>🎛️ Cockpit Hardware & Knobs Mapping</span>
+        <span style="font-size:0.75rem; color:#94a3b8; font-weight:normal;">Map ACP PA knob & Cabin Call Light</span>
+      </div>
+      <div class="meta-grid hardware-card">
+        <div class="field-group">
+          <label>PA Volume Knob Dataref</label>
+          <input type="text" id="hwPaVolume" value="AirbusFBW/ACP1RotaryPositions" placeholder="e.g. AirbusFBW/ACP1RotaryPositions" oninput="syncFromUI()">
+          <span style="font-size: 0.7rem; color: var(--muted);">Sync announcement audio volume with cockpit ACP PA knob</span>
+        </div>
+        <div class="field-group">
+          <label>PA Volume Array Index</label>
+          <input type="number" id="hwPaIndex" value="7" placeholder="e.g. 7 (or 0 for non-array)" oninput="syncFromUI()">
+          <span style="font-size: 0.7rem; color: var(--muted);">Rotary index (e.g. 7 for ToLiss ACP1 PA knob)</span>
+        </div>
+        <div class="field-group">
+          <label>Cabin Call Light Dataref</label>
+          <input type="text" id="hwCabinCall" value="AirbusFBW/CheckCabin" placeholder="e.g. AirbusFBW/CheckCabin" oninput="syncFromUI()">
+          <span style="font-size: 0.7rem; color: var(--muted);">Cockpit annunciator dataref for incoming cabin call chime</span>
+        </div>
+        <div class="field-group">
+          <label>Cabin Ready / Check Command</label>
+          <input type="text" id="hwCabinReady" value="AirbusFBW/CheckCabin" placeholder="e.g. AirbusFBW/CheckCabin" oninput="syncFromUI()">
+          <span style="font-size: 0.7rem; color: var(--muted);">Sim command sent when answering cabin crew call</span>
+        </div>
       </div>
 
-      <!-- Quick Add Fenix Buttons -->
-      <div style="font-size: 0.75rem; color: var(--muted); margin-bottom: -6px;">Click to quickly add standard Fenix A320 announcement triggers:</div>
-      <div class="quick-chips" id="quickChips"></div>
+      <!-- Triggers Header -->
+      <div class="panel-title" style="margin-top: 6px;">
+        <span>🎙️ Announcement Triggers (Chronological Flight Order)</span>
+        <div style="display:flex; gap:6px;">
+          <button class="btn-sm" onclick="expandAll()">Expand All</button>
+          <button class="btn-sm" onclick="collapseAll()">Collapse All</button>
+          <button class="btn-sm btn-primary" onclick="promptAddCustomTrigger()">➕ Add Custom</button>
+        </div>
+      </div>
+
+      <div style="font-size: 0.75rem; color: var(--muted); margin-bottom: -4px;">
+        Standard announcements are arranged in chronological flight sequence. Toggle any trigger on/off or configure datarefs and announcement dependencies.
+      </div>
 
       <!-- Triggers List Container -->
       <div class="triggers-list" id="triggersContainer"></div>
@@ -289,42 +535,115 @@
   <div class="toast" id="toastBox">Saved successfully!</div>
 
   <script>
-    // Standard Fenix sound keys
-    const STANDARD_SOUNDS = [
-      "BoardingWelcome", "ArmDoors", "SafetyBriefing", "CrewSeatsTakeoff",
-      "AfterTakeoff", "FastenSeatbelt", "TopOfClimbPilot", "TopOfDescentPilot",
-      "Descent", "AfterLanding", "DisarmDoors", "Deboarding", "BoardingMusic"
+    // 17 Genuine Fenix A320 cabin announcements arranged strictly in chronological flight order
+    const STANDARD_ANNOUNCEMENTS = [
+      { id: "BoardingWelcome", label: "🛫 Boarding Welcome", phase: "Pre-Flight", defaultDelay: 6, defaultConds: ["boarding_started == 1", "sim/flightmodel/failures/onground_any == 1", "AirbusFBW/ParkBrake >= 0.5", "AirbusFBW/BeaconLightsOn == 0"] },
+      { id: "BoardingMusic", label: "🎵 Boarding Music", phase: "Pre-Flight", defaultDelay: 0, defaultConds: ["boarding_started == 1", "sim/flightmodel/failures/onground_any == 1", "played BoardingWelcome"] },
+      { id: "BoardingComplete", label: "📋 Boarding Complete", phase: "Pre-Flight", defaultDelay: 2, defaultConds: ["boarding_completed == 1", "sim/flightmodel/failures/onground_any == 1"] },
+      { id: "ArmDoors", label: "🚪 Arm Doors & Crosscheck", phase: "Departure", defaultDelay: 2, defaultConds: ["sim/flightmodel/failures/onground_any == 1", "AirbusFBW/BeaconLightsOn -> 1"] },
+      { id: "PreSafetyBriefing", label: "📢 Pre-Safety Briefing", phase: "Departure", defaultDelay: 15, defaultConds: ["sim/flightmodel/failures/onground_any == 1", "played ArmDoors"] },
+      { id: "SafetyBriefing", label: "🦺 Passenger Safety Demonstration", phase: "Departure", defaultDelay: 4, defaultConds: ["sim/flightmodel/failures/onground_any == 1", "played PreSafetyBriefing", "sim/flightmodel/position/groundspeed > 1.5"] },
+      { id: "CabinDimTakeoff", label: "💡 Cabin Lighting Dim (Takeoff)", phase: "Departure", defaultDelay: 2, defaultConds: ["sim/flightmodel/failures/onground_any == 1", "played SafetyBriefing", "sim/graphics/scenery/sun_pitch_degrees < 0.0"] },
+      { id: "CrewSeatsTakeoff", label: "💺 Crew Seats for Takeoff", phase: "Departure", defaultDelay: 2, defaultConds: ["sim/flightmodel/failures/onground_any == 1", "played SafetyBriefing", "AirbusFBW/StrobeLightsOn -> 2"] },
+      { id: "CallCabinSecureTakeoff", label: "📞 Cabin Ready Call (Takeoff)", phase: "Departure", defaultDelay: 10, defaultConds: ["sim/flightmodel/failures/onground_any == 1", "played CrewSeatsTakeoff"] },
+      { id: "AfterTakeoff", label: "🌤️ After Takeoff Announcement", phase: "Climb", defaultDelay: 4, defaultConds: ["sim/flightmodel/failures/onground_any == 0", "sim/cockpit2/gauges/indicators/radio_altimeter_height_ft_pilot climbs_past 1500"] },
+      { id: "FastenSeatbelt", label: "🔔 Fasten Seatbelt Signs On", phase: "Cruise", defaultDelay: 1, defaultConds: ["sim/flightmodel/failures/onground_any == 0", "sim/cockpit2/gauges/indicators/altitude_ft_pilot > 5000", "AirbusFBW/SeatBeltSignsOn -> 1"], repeat: true, cooldown: 60 },
+      { id: "DescentSeatbelts", label: "🛬 Descent & Cabin Prepare", phase: "Descent", defaultDelay: 3, defaultConds: ["sim/flightmodel/failures/onground_any == 0", "sim/cockpit2/gauges/indicators/altitude_ft_pilot descends_past 10000", "AirbusFBW/SeatBeltSignsOn -> 1"] },
+      { id: "CallCabinSecureLanding", label: "📞 Cabin Ready Call (Landing)", phase: "Approach", defaultDelay: 2, defaultConds: ["sim/flightmodel/failures/onground_any == 0", "played DescentSeatbelts"] },
+      { id: "CrewSeatsLanding", label: "💺 Crew Seats for Landing", phase: "Approach", defaultDelay: 2, defaultConds: ["sim/flightmodel/failures/onground_any == 0", "played DescentSeatbelts"] },
+      { id: "AfterLanding", label: "🛬 Welcome / After Landing", phase: "Arrival", defaultDelay: 3, defaultConds: ["played DescentSeatbelts", "sim/flightmodel/failures/onground_any == 1", "sim/flightmodel/position/groundspeed < 15.0"] },
+      { id: "DisarmDoors", label: "🚪 Disarm Doors & Crosscheck", phase: "Arrival", defaultDelay: 2, defaultConds: ["played AfterLanding", "sim/flightmodel/failures/onground_any == 1", "AirbusFBW/ParkBrake >= 0.5", "AirbusFBW/BeaconLightsOn -> 0"] },
+      { id: "DisembarkStarted", label: "👋 Disembarking & Farewell", phase: "Arrival", defaultDelay: 5, defaultConds: ["played DisarmDoors", "sim/flightmodel/failures/onground_any == 1", "AirbusFBW/PaxDoorArray[0] >= 0.5"] }
     ];
 
-    // Common standard X-Plane dataref presets with human-friendly descriptions
-    const DATAREF_PRESETS = [
-      { label: "⚡ Custom Dataref...", dref: "" },
-      { label: "🛞 On Ground (1=Yes, 0=Airborne)", dref: "sim/flightmodel/failures/onground_any" },
-      { label: "🚗 Ground Speed (m/s)", dref: "sim/flightmodel/position/groundspeed" },
-      { label: "📏 Altitude AGL (meters)", dref: "sim/flightmodel/position/y_agl" },
-      { label: "🏔️ Altitude MSL (meters)", dref: "sim/flightmodel/position/elevation" },
-      { label: "💡 Beacon Light (1=On, 0=Off)", dref: "sim/cockpit2/switches/beacon_on" },
-      { label: "🅿️ Parking Brake (0.0 to 1.0)", dref: "sim/cockpit2/controls/parking_brake_ratio" },
-      { label: "🔔 Seatbelt Signs (1=On, 0=Off)", dref: "sim/cockpit2/switches/fasten_seat_belts" },
-      { label: "✈️ ToLiss: Parking Brake", dref: "AirbusFBW/ParkBrake" },
-      { label: "✈️ ToLiss: Beacon Light", dref: "AirbusFBW/BeaconLightsOn" },
-      { label: "✈️ ToLiss: Seatbelt Sign", dref: "AirbusFBW/SeatBeltSignsOn" },
-      { label: "✈️ ToLiss: Strobes (2=On)", dref: "AirbusFBW/StrobeLightsOn" }
+    // Curated Jamf Pro Criteria Presets with First-Class Array Dataref Support
+    const CRITERIA_PRESETS = [
+      {
+        group: "Cabin & Boarding States",
+        items: [
+          { label: "🛫 Passenger Boarding Started", dref: "boarding_started", defaultOp: "==", defaultVal: "1" },
+          { label: "✅ Passenger Boarding Completed", dref: "boarding_completed", defaultOp: "==", defaultVal: "1" },
+          { label: "🔔 Announcement Has Played (Dependency)", dref: "__played__", defaultOp: "has_played", defaultVal: "SafetyBriefing" }
+        ]
+      },
+      {
+        group: "Aircraft Doors & Hardware (Array Datarefs)",
+        items: [
+          { label: "🚪 Pax Door 1L Open (ToLiss PaxDoorArray[0])", dref: "AirbusFBW/PaxDoorArray[0]", defaultOp: ">=", defaultVal: "0.5" },
+          { label: "🚪 Pax Door 2L Open (ToLiss PaxDoorArray[1])", dref: "AirbusFBW/PaxDoorArray[1]", defaultOp: ">=", defaultVal: "0.5" },
+          { label: "📻 ACP1 PA Knob Volume (ACP1RotaryPositions[7])", dref: "AirbusFBW/ACP1RotaryPositions[7]", defaultOp: ">", defaultVal: "0.1" },
+          { label: "🛞 Engine 1 Running (ENGN_running[0])", dref: "sim/flightmodel/engine/ENGN_running[0]", defaultOp: "==", defaultVal: "1" },
+          { label: "🛞 Engine 2 Running (ENGN_running[1])", dref: "sim/flightmodel/engine/ENGN_running[1]", defaultOp: "==", defaultVal: "1" }
+        ]
+      },
+      {
+        group: "Cockpit Controls & Switches",
+        items: [
+          { label: "🅿️ Parking Brake (0.0 to 1.0)", dref: "AirbusFBW/ParkBrake", defaultOp: ">=", defaultVal: "0.5" },
+          { label: "🚨 Beacon Light (1=On, 0=Off)", dref: "AirbusFBW/BeaconLightsOn", defaultOp: "==", defaultVal: "1" },
+          { label: "🔔 Fasten Seatbelt Signs (1=On, 0=Off)", dref: "AirbusFBW/SeatBeltSignsOn", defaultOp: "->", defaultVal: "1" },
+          { label: "⚡ Strobe Lights (0=Off, 1=Auto, 2=On)", dref: "AirbusFBW/StrobeLightsOn", defaultOp: "->", defaultVal: "2" },
+          { label: "💡 Landing Lights (1=On, 0=Off)", dref: "sim/cockpit2/switches/landing_lights_switch", defaultOp: "==", defaultVal: "1" },
+          { label: "🛞 Landing Gear Down (1=Down, 0=Up)", dref: "sim/cockpit2/controls/gear_handle_down", defaultOp: "==", defaultVal: "1" }
+        ]
+      },
+      {
+        group: "Flight Dynamics & Environment",
+        items: [
+          { label: "🛞 On Ground (1=Yes, 0=Airborne)", dref: "sim/flightmodel/failures/onground_any", defaultOp: "==", defaultVal: "1" },
+          { label: "🚗 Ground Speed (m/s)", dref: "sim/flightmodel/position/groundspeed", defaultOp: ">", defaultVal: "1.5" },
+          { label: "💨 Airspeed (knots)", dref: "sim/flightmodel/position/indicated_airspeed", defaultOp: ">", defaultVal: "250" },
+          { label: "📏 Altitude AGL (feet - Radio Altimeter)", dref: "sim/cockpit2/gauges/indicators/radio_altimeter_height_ft_pilot", defaultOp: "climbs_past", defaultVal: "1500" },
+          { label: "🏔️ Altitude MSL (feet - Barometric Altimeter)", dref: "sim/cockpit2/gauges/indicators/altitude_ft_pilot", defaultOp: "descends_past", defaultVal: "10000" },
+          { label: "☀️ Sun Pitch Angle (< 0 is night/dusk)", dref: "sim/graphics/scenery/sun_pitch_degrees", defaultOp: "<", defaultVal: "0.0" },
+          { label: "💡 Ambient Outside Light (0.0 to 1.0)", dref: "sim/graphics/misc/outside_light_level_r", defaultOp: "<", defaultVal: "0.3" },
+          { label: "⏰ Flight Hour (0 to 23)", dref: "local_time_hour", defaultOp: "between", defaultVal: ["21", "6"] }
+        ]
+      },
+      {
+        group: "Custom",
+        items: [
+          { label: "⚡ Custom Dataref (with optional [index])...", dref: "__custom__", defaultOp: "==", defaultVal: "1" }
+        ]
+      }
     ];
+    const DATAREF_PRESETS = CRITERIA_PRESETS.flatMap(g => g.items);
 
-    // Current config state
+    // Current working config state
     let state = {
       name: "ToLiss A320 Family (A319/A320/A321)",
       author: "X-Plane Cabin Announcer",
       aircraft_icao_match: ["A319", "A320", "A321"],
+      hardware_mappings: {
+        pa_volume_dataref: "AirbusFBW/ACP1RotaryPositions",
+        pa_volume_index: 7,
+        cabin_call_annunciator_dataref: "AirbusFBW/CheckCabin",
+        cabin_ready_command: "AirbusFBW/CheckCabin"
+      },
       triggers: {
         "BoardingWelcome": {
           when: [
+            "boarding_started == 1",
             "sim/flightmodel/failures/onground_any == 1",
-            "AirbusFBW/ParkBrake >= 0.9",
+            "AirbusFBW/ParkBrake >= 0.5",
             "AirbusFBW/BeaconLightsOn == 0"
           ],
           delay: 6
+        },
+        "BoardingMusic": {
+          when: [
+            "boarding_started == 1",
+            "sim/flightmodel/failures/onground_any == 1",
+            "played BoardingWelcome"
+          ],
+          delay: 6
+        },
+        "BoardingComplete": {
+          when: [
+            "boarding_completed == 1",
+            "sim/flightmodel/failures/onground_any == 1"
+          ],
+          delay: 2
         },
         "ArmDoors": {
           when: [
@@ -333,54 +652,86 @@
           ],
           delay: 2
         },
+        "PreSafetyBriefing": {
+          when: [
+            "played ArmDoors",
+            "sim/flightmodel/failures/onground_any == 1"
+          ],
+          delay: 15
+        },
         "SafetyBriefing": {
           when: [
+            "played PreSafetyBriefing",
             "sim/flightmodel/failures/onground_any == 1",
-            "sim/flightmodel/position/groundspeed > 1.5",
-            "AirbusFBW/BeaconLightsOn == 1"
+            "sim/flightmodel/position/groundspeed > 1.5"
           ],
           delay: 4
         },
+        "CabinDimTakeoff": {
+          when: [
+            "played SafetyBriefing",
+            "sim/flightmodel/failures/onground_any == 1",
+            "sim/graphics/scenery/sun_pitch_degrees < 0.0"
+          ],
+          delay: 2
+        },
         "CrewSeatsTakeoff": {
           when: [
+            "played SafetyBriefing",
             "sim/flightmodel/failures/onground_any == 1",
             "AirbusFBW/StrobeLightsOn -> 2"
           ],
           delay: 2
         },
+        "CallCabinSecureTakeoff": {
+          when: [
+            "played CrewSeatsTakeoff",
+            "sim/flightmodel/failures/onground_any == 1"
+          ],
+          delay: 10
+        },
         "AfterTakeoff": {
           when: [
             "sim/flightmodel/failures/onground_any == 0",
-            "sim/flightmodel/position/y_agl climbs_past 457.2"
+            "sim/cockpit2/gauges/indicators/radio_altimeter_height_ft_pilot climbs_past 1500"
           ],
           delay: 4
-        },
-        "TopOfClimbPilot": {
-          when: [
-            "sim/flightmodel/failures/onground_any == 0",
-            "sim/flightmodel/position/elevation climbs_past 3048"
-          ],
-          delay: 8
         },
         "FastenSeatbelt": {
           when: [
             "sim/flightmodel/failures/onground_any == 0",
-            "sim/flightmodel/position/y_agl > 1500",
+            "sim/cockpit2/gauges/indicators/altitude_ft_pilot > 5000",
             "AirbusFBW/SeatBeltSignsOn -> 1"
           ],
           delay: 1,
           cooldown: 60,
           repeat: true
         },
-        "TopOfDescentPilot": {
+        "DescentSeatbelts": {
           when: [
             "sim/flightmodel/failures/onground_any == 0",
-            "sim/flightmodel/position/elevation descends_past 3048"
+            "sim/cockpit2/gauges/indicators/altitude_ft_pilot descends_past 10000",
+            "AirbusFBW/SeatBeltSignsOn -> 1"
           ],
-          delay: 5
+          delay: 3
+        },
+        "CallCabinSecureLanding": {
+          when: [
+            "played DescentSeatbelts",
+            "sim/flightmodel/failures/onground_any == 0"
+          ],
+          delay: 2
+        },
+        "CrewSeatsLanding": {
+          when: [
+            "played DescentSeatbelts",
+            "sim/flightmodel/failures/onground_any == 0"
+          ],
+          delay: 2
         },
         "AfterLanding": {
           when: [
+            "played DescentSeatbelts",
             "sim/flightmodel/failures/onground_any == 1",
             "sim/flightmodel/position/groundspeed < 15.0"
           ],
@@ -388,148 +739,207 @@
         },
         "DisarmDoors": {
           when: [
+            "played AfterLanding",
             "sim/flightmodel/failures/onground_any == 1",
-            "AirbusFBW/ParkBrake >= 0.9",
+            "AirbusFBW/ParkBrake >= 0.5",
             "AirbusFBW/BeaconLightsOn -> 0"
           ],
           delay: 2
+        },
+        "DisembarkStarted": {
+          when: [
+            "played DisarmDoors",
+            "sim/flightmodel/failures/onground_any == 1",
+            "AirbusFBW/PaxDoorArray[0] >= 0.5"
+          ],
+          delay: 5
         }
       }
     };
 
     function init() {
-      renderQuickChips();
       renderTriggers();
       updateLiveJSON();
       fetchConfigsList();
     }
 
-    function renderQuickChips() {
-      const container = document.getElementById("quickChips");
-      container.innerHTML = "";
-      STANDARD_SOUNDS.forEach(sound => {
-        const chip = document.createElement("div");
-        chip.className = "chip";
-        chip.textContent = `+ ${sound}`;
-        chip.onclick = () => addTrigger(sound);
-        container.appendChild(chip);
+    function parseWhenToJamfRows(whenList) {
+      if (!whenList) return [];
+      if (typeof whenList === "string") whenList = [whenList];
+      if (!Array.isArray(whenList)) return [];
+
+      const rows = [];
+      whenList.forEach((rawItem, itemIdx) => {
+        const item = (rawItem || "").trim();
+        if (!item) return;
+
+        // Protect 'between X and Y' from being split on 'and'
+        const protectedItem = item.replace(/(between\s+[\d\.\-]+)\s+and\s+([\d\.\-]+)/gi, "$1 __AND_BETWEEN__ $2");
+        const tokens = protectedItem.split(/\s*\b(AND|OR|NAND|NOR)\b\s*/i);
+
+        for (let i = 0; i < tokens.length; i += 2) {
+          let chunk = (tokens[i] || "").trim().replace(/__AND_BETWEEN__/g, "and");
+          if (!chunk) continue;
+          const connector = tokens[i + 1] ? tokens[i + 1].toUpperCase() : (itemIdx < whenList.length - 1 ? "AND" : "");
+
+          // Extract leading parens
+          const mOpen = chunk.match(/^(\(+)\s*/);
+          const openParens = mOpen ? mOpen[1] : "";
+          let rest = mOpen ? chunk.slice(mOpen[0].length).trim() : chunk;
+
+          // Extract trailing parens
+          const mClose = rest.match(/\s*(\)+)$/);
+          const closeParens = mClose ? mClose[1] : "";
+          const atomic = mClose ? rest.slice(0, -mClose[0].length).trim() : rest;
+
+          const atom = parseAtomicCondition(atomic);
+          rows.push({
+            open: openParens,
+            crit: atom.dref,
+            op: atom.op,
+            val: atom.val,
+            close: closeParens,
+            logic: connector || "AND"
+          });
+        }
       });
+
+      if (rows.length === 0) {
+        rows.push({
+          open: "",
+          crit: "sim/flightmodel/failures/onground_any",
+          op: "==",
+          val: "1",
+          close: "",
+          logic: "AND"
+        });
+      }
+      return rows;
+    }
+
+    function parseAtomicCondition(str) {
+      str = (str || "").trim();
+
+      // 1. Dependency condition: "played SafetyBriefing", "after ArmDoors"
+      let mAnn = str.match(/^(?:played|after|has_played)\s+([A-Za-z0-9_\-]+)$/i);
+      if (mAnn) {
+        return { dref: "__played__", op: "has_played", val: mAnn[1].trim() };
+      }
+
+      // 2. Boarding conditions: "boarding_started", "boarding_completed"
+      let mBoard = str.match(/^(boarding_started|boarding_completed)(?:\s*(==|!=)\s*([01]))?$/i);
+      if (mBoard) {
+        return {
+          dref: mBoard[1].toLowerCase(),
+          op: mBoard[2] || "==",
+          val: mBoard[3] !== undefined ? mBoard[3] : "1"
+        };
+      }
+
+      // 3. Range / between condition: "dref between min and max"
+      let mBetween = str.match(/^(.+?)\s+between\s+([\d\.\-]+)\s+and\s+([\d\.\-]+)$/i);
+      if (mBetween) {
+        return {
+          dref: mBetween[1].trim(),
+          op: "between",
+          val: [mBetween[2].trim(), mBetween[3].trim()]
+        };
+      }
+
+      // 4. Transitions & comparisons: climbs_past, descends_past, ->, ==, !=, >=, <=, >, <
+      let m = str.match(/^(.+?)\s*(climbs_past|descends_past|->|==|!=|>=|<=|>|<)\s*(.+)$/i);
+      if (m) {
+        return { dref: m[1].trim(), op: m[2].trim(), val: m[3].trim() };
+      }
+      return { dref: str, op: "==", val: "1" };
+    }
+
+    function getPreviousAnnouncement(soundId) {
+      const idx = STANDARD_ANNOUNCEMENTS.findIndex(a => a.id === soundId);
+      if (idx > 0) {
+        return STANDARD_ANNOUNCEMENTS[idx - 1].id;
+      }
+      return "SafetyBriefing";
     }
 
     function renderTriggers() {
       const container = document.getElementById("triggersContainer");
       container.innerHTML = "";
 
-      const keys = Object.keys(state.triggers);
-      if (keys.length === 0) {
-        container.innerHTML = `<div style="color:var(--muted); font-size:0.85rem; padding:16px; text-align:center;">No triggers defined yet. Click an announcement above to add one!</div>`;
-        return;
-      }
+      const allItems = [...STANDARD_ANNOUNCEMENTS];
+      const customKeys = Object.keys(state.triggers || {}).filter(k => !STANDARD_ANNOUNCEMENTS.some(s => s.id === k));
+      customKeys.forEach(k => {
+        allItems.push({ id: k, label: `⚡ ${k}`, phase: "Custom", defaultDelay: 2, defaultConds: ["sim/flightmodel/failures/onground_any == 1"] });
+      });
 
-      keys.forEach(soundName => {
-        const def = state.triggers[soundName];
+      allItems.forEach(ann => {
+        const soundId = ann.id;
+        const isDefined = !!state.triggers[soundId];
+        const def = state.triggers[soundId] || {
+          when: [...(ann.defaultConds || ["sim/flightmodel/failures/onground_any == 1"])],
+          delay: ann.defaultDelay || 2,
+          cooldown: ann.cooldown || 300,
+          repeat: !!ann.repeat
+        };
+
         const card = document.createElement("div");
-        card.className = "trigger-card";
+        card.className = "trigger-card" + (isDefined ? "" : " inactive");
+        card.id = `card_${soundId}`;
 
-        // Normalize when to array
+        // Header
+        const header = document.createElement("div");
+        header.className = "trigger-header";
+
+        const leftBox = document.createElement("div");
+        leftBox.className = "trigger-name-badge";
+        leftBox.innerHTML = `
+          <span>${ann.label}</span>
+          <span class="phase-badge phase-${ann.phase}">${ann.phase}</span>
+        `;
+
+        const rightBox = document.createElement("div");
+        rightBox.style.display = "flex";
+        rightBox.style.alignItems = "center";
+        rightBox.style.gap = "10px";
+
+        const chkActive = document.createElement("input");
+        chkActive.type = "checkbox";
+        chkActive.id = `chk_${soundId}`;
+        chkActive.checked = isDefined;
+        chkActive.onchange = () => toggleTriggerActive(soundId, chkActive.checked, ann);
+
+        const lblActive = document.createElement("label");
+        lblActive.className = "toggle-active";
+        lblActive.appendChild(chkActive);
+        lblActive.appendChild(document.createTextNode(isDefined ? "Active" : "Disabled"));
+
+        rightBox.appendChild(lblActive);
+
+        if (ann.phase === "Custom") {
+          const btnDelCustom = document.createElement("button");
+          btnDelCustom.className = "btn-sm btn-danger";
+          btnDelCustom.textContent = "✕";
+          btnDelCustom.onclick = () => removeCustomTrigger(soundId);
+          rightBox.appendChild(btnDelCustom);
+        }
+
+        header.appendChild(leftBox);
+        header.appendChild(rightBox);
+        card.appendChild(header);
+
+        // Body container
+        const bodyBox = document.createElement("div");
+        bodyBox.id = `body_${soundId}`;
+        bodyBox.style.display = isDefined ? "flex" : "none";
+        bodyBox.style.flexDirection = "column";
+        bodyBox.style.gap = "10px";
+
+        // Jamf Pro Smart Group Criteria Table
         let whenList = [];
         if (typeof def.when === "string") whenList = [def.when];
         else if (Array.isArray(def.when)) whenList = def.when;
 
-        // Trigger Header
-        const header = document.createElement("div");
-        header.className = "trigger-header";
-        header.innerHTML = `
-          <div class="trigger-name-badge">
-            <span>📢 ${soundName}</span>
-          </div>
-          <button class="btn-sm btn-danger" onclick="removeTrigger('${soundName}')">✕ Remove</button>
-        `;
-        card.appendChild(header);
-
-        // Conditions Section
-        const condContainer = document.createElement("div");
-        condContainer.className = "condition-rows";
-
-        whenList.forEach((condStr, idx) => {
-          const parsed = parseConditionString(condStr);
-          const row = document.createElement("div");
-          row.className = "condition-row";
-
-          // 1. Preset Dropdown
-          const selPreset = document.createElement("select");
-          DATAREF_PRESETS.forEach(p => {
-            const opt = document.createElement("option");
-            opt.value = p.dref;
-            opt.textContent = p.label;
-            if (p.dref === parsed.dref) opt.selected = true;
-            selPreset.appendChild(opt);
-          });
-
-          // 2. Custom Dataref Input
-          const txtDref = document.createElement("input");
-          txtDref.type = "text";
-          txtDref.value = parsed.dref;
-          txtDref.placeholder = "e.g. sim/cockpit2/...";
-
-          selPreset.onchange = () => {
-            if (selPreset.value) txtDref.value = selPreset.value;
-            syncFromUI();
-          };
-          txtDref.oninput = () => syncFromUI();
-
-          // 3. Operator
-          const selOp = document.createElement("select");
-          const ops = [
-            { val: "==", text: "== Equal" },
-            { val: ">", text: "> Greater" },
-            { val: ">=", text: ">= GTE" },
-            { val: "<", text: "< Less" },
-            { val: "<=", text: "<= LTE" },
-            { val: "!=", text: "!= Not Equal" },
-            { val: "->", text: "-> Turns On/Off" },
-            { val: "climbs_past", text: "▲ Climbs Past" },
-            { val: "descends_past", text: "▼ Descends Past" }
-          ];
-          ops.forEach(o => {
-            const opt = document.createElement("option");
-            opt.value = o.val;
-            opt.textContent = o.text;
-            if (o.val === parsed.op) opt.selected = true;
-            selOp.appendChild(opt);
-          });
-          selOp.onchange = () => syncFromUI();
-
-          // 4. Value
-          const txtVal = document.createElement("input");
-          txtVal.type = "text";
-          txtVal.value = parsed.val;
-          txtVal.oninput = () => syncFromUI();
-
-          // 5. Delete button
-          const btnDel = document.createElement("button");
-          btnDel.className = "btn-sm btn-danger";
-          btnDel.textContent = "✕";
-          btnDel.onclick = () => removeCondition(soundName, idx);
-
-          row.appendChild(selPreset);
-          row.appendChild(txtDref);
-          row.appendChild(selOp);
-          row.appendChild(txtVal);
-          row.appendChild(btnDel);
-
-          condContainer.appendChild(row);
-        });
-
-        card.appendChild(condContainer);
-
-        // Add condition button
-        const btnAddCond = document.createElement("button");
-        btnAddCond.className = "btn-sm";
-        btnAddCond.style.alignSelf = "flex-start";
-        btnAddCond.textContent = "+ Add Condition";
-        btnAddCond.onclick = () => addCondition(soundName);
-        card.appendChild(btnAddCond);
+        bodyBox.appendChild(createJamfCriteriaTable(soundId, whenList));
 
         // Settings row (delay, cooldown, repeat)
         const settingsRow = document.createElement("div");
@@ -539,106 +949,600 @@
         const repVal = !!def.repeat;
 
         settingsRow.innerHTML = `
-          <span>Delay: <input type="number" min="0" value="${delayVal}" id="delay_${soundName}" onchange="syncFromUI()"> s</span>
-          <span>Cooldown: <input type="number" min="0" value="${coolVal}" id="cool_${soundName}" onchange="syncFromUI()"> s</span>
-          <label><input type="checkbox" id="rep_${soundName}" ${repVal ? "checked" : ""} onchange="syncFromUI()"> Repeat per flight</label>
+          <span>Delay: <input type="number" min="0" value="${delayVal}" id="delay_${soundId}" onchange="syncFromUI()"> s</span>
+          <span>Cooldown: <input type="number" min="0" value="${coolVal}" id="cool_${soundId}" onchange="syncFromUI()"> s</span>
+          <label><input type="checkbox" id="rep_${soundId}" ${repVal ? "checked" : ""} onchange="syncFromUI()"> Repeat per flight</label>
         `;
-        card.appendChild(settingsRow);
+        bodyBox.appendChild(settingsRow);
 
+        card.appendChild(bodyBox);
         container.appendChild(card);
       });
     }
 
-    function parseConditionString(str) {
-      str = (str || "").trim();
-      let m = str.match(/^(.+?)\s+(climbs_past|descends_past|->|==|!=|>=|<=|>|<)\s*(.+)$/i);
-      if (m) {
-        return { dref: m[1].trim(), op: m[2].trim(), val: m[3].trim() };
+    function createJamfCriteriaTable(soundId, whenList) {
+      const container = document.createElement("div");
+      container.className = "jamf-container";
+      container.id = `jamf_container_${soundId}`;
+
+      // 1. Live Formula Preview Bar
+      const previewBar = document.createElement("div");
+      previewBar.className = "jamf-preview-bar";
+      previewBar.innerHTML = `
+        <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+          <span style="font-weight:700; color:var(--muted); font-size:0.75rem; text-transform:uppercase;">Formula:</span>
+          <code class="jamf-preview-formula" id="formula_${soundId}">...</code>
+        </div>
+        <span class="paren-badge paren-valid" id="paren_badge_${soundId}">✔ Balanced</span>
+      `;
+      container.appendChild(previewBar);
+
+      // 2. The Criteria Table
+      const table = document.createElement("div");
+      table.className = "jamf-table";
+
+      const header = document.createElement("div");
+      header.className = "jamf-header";
+      header.innerHTML = `
+        <div class="center">(</div>
+        <div>Criteria</div>
+        <div>Operator</div>
+        <div>Value</div>
+        <div class="center">)</div>
+        <div>And / Or</div>
+        <div></div>
+      `;
+      table.appendChild(header);
+
+      const rowsBox = document.createElement("div");
+      rowsBox.className = "jamf-rows-box";
+      rowsBox.id = `jamf_rows_${soundId}`;
+
+      const initialRows = parseWhenToJamfRows(whenList);
+      initialRows.forEach((rData, idx) => {
+        rowsBox.appendChild(createJamfRowElement(soundId, rData, idx));
+      });
+      table.appendChild(rowsBox);
+      container.appendChild(table);
+
+      // 3. Add Criterion Button
+      const btnAdd = document.createElement("button");
+      btnAdd.className = "btn-sm jamf-btn-add";
+      btnAdd.textContent = "➕ Add Criterion";
+      btnAdd.onclick = () => addJamfCriterion(soundId);
+      container.appendChild(btnAdd);
+
+      // Initialize preview
+      setTimeout(() => updateJamfPreview(soundId), 0);
+
+      return container;
+    }
+
+    function createJamfRowElement(soundId, rowData, rowIndex) {
+      const row = document.createElement("div");
+      row.className = "jamf-row";
+      row.dataset.soundId = soundId;
+
+      // 1. Opening Parentheses Dropdown
+      const selOpen = document.createElement("select");
+      selOpen.className = "jamf-parens jamf-open-parens";
+      ["", "(", "((", "((("].forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p;
+        opt.textContent = p || "--";
+        if (p === (rowData.open || "")) opt.selected = true;
+        selOpen.appendChild(opt);
+      });
+      selOpen.onchange = () => updateJamfPreview(soundId);
+      row.appendChild(selOpen);
+
+      // 2. Criteria Dropdown & Custom Dataref Input
+      const critCell = document.createElement("div");
+      critCell.className = "jamf-crit-cell";
+
+      const selCrit = document.createElement("select");
+      selCrit.className = "jamf-crit-select";
+
+      let matchedPreset = false;
+      const curCrit = rowData.crit || "";
+
+      CRITERIA_PRESETS.forEach(grp => {
+        const optgroup = document.createElement("optgroup");
+        optgroup.label = grp.group;
+        grp.items.forEach(item => {
+          const opt = document.createElement("option");
+          opt.value = item.dref;
+          opt.textContent = item.label;
+          if (item.dref === curCrit) {
+            opt.selected = true;
+            matchedPreset = true;
+          }
+          optgroup.appendChild(opt);
+        });
+        selCrit.appendChild(optgroup);
+      });
+
+      const customBox = document.createElement("div");
+      customBox.className = "jamf-custom-box";
+
+      const txtCustom = document.createElement("input");
+      txtCustom.type = "text";
+      txtCustom.className = "jamf-custom-dref";
+      txtCustom.placeholder = "e.g. AirbusFBW/PaxDoorArray";
+
+      const txtIndex = document.createElement("input");
+      txtIndex.type = "text";
+      txtIndex.className = "jamf-custom-index";
+      txtIndex.placeholder = "[#] Idx";
+      txtIndex.title = "Array index (e.g. 0, 1, 7). Leave blank for scalar datarefs.";
+
+      customBox.appendChild(txtCustom);
+      customBox.appendChild(txtIndex);
+
+      let baseCrit = curCrit;
+      let arrayIndex = "";
+      const mArr = curCrit.match(/^(.+?)\[(\d+)\]$/);
+      if (mArr) {
+        baseCrit = mArr[1];
+        arrayIndex = mArr[2];
       }
-      return { dref: str, op: "==", val: "1" };
+
+      if (!matchedPreset && curCrit !== "__custom__" && curCrit !== "") {
+        selCrit.value = "__custom__";
+        txtCustom.value = baseCrit;
+        txtIndex.value = arrayIndex;
+        customBox.style.display = "flex";
+      } else if (selCrit.value === "__custom__") {
+        customBox.style.display = "flex";
+      } else {
+        customBox.style.display = "none";
+      }
+
+      critCell.appendChild(selCrit);
+      critCell.appendChild(customBox);
+      row.appendChild(critCell);
+
+      // 3. Operator Dropdown
+      const selOp = document.createElement("select");
+      selOp.className = "jamf-op-select";
+      const opList = [
+        { val: "==", text: "is (=)" },
+        { val: "!=", text: "is not (!=)" },
+        { val: ">", text: "is greater than (>)" },
+        { val: "<", text: "is less than (<)" },
+        { val: ">=", text: "is >=" },
+        { val: "<=", text: "is <=" },
+        { val: "between", text: "between" },
+        { val: "climbs_past", text: "climbs past" },
+        { val: "descends_past", text: "descends past" },
+        { val: "->", text: "changes to (->)" },
+        { val: "has_played", text: "has played" }
+      ];
+      opList.forEach(o => {
+        const opt = document.createElement("option");
+        opt.value = o.val;
+        opt.textContent = o.text;
+        if (o.val === (rowData.op || "==")) opt.selected = true;
+        selOp.appendChild(opt);
+      });
+      row.appendChild(selOp);
+
+      // 4. Value Box
+      const valBox = document.createElement("div");
+      valBox.className = "jamf-val-box";
+
+      function renderValControl() {
+        valBox.innerHTML = "";
+        const isPlayedMode = (selCrit.value === "__played__" || selOp.value === "has_played");
+
+        if (isPlayedMode) {
+          const selAnn = document.createElement("select");
+          selAnn.className = "jamf-ann-select";
+          STANDARD_ANNOUNCEMENTS.forEach(a => {
+            const opt = document.createElement("option");
+            opt.value = a.id;
+            opt.textContent = a.label;
+            if (a.id === (rowData.val || "SafetyBriefing")) opt.selected = true;
+            selAnn.appendChild(opt);
+          });
+          selAnn.onchange = () => updateJamfPreview(soundId);
+          valBox.appendChild(selAnn);
+        } else if (selOp.value === "between") {
+          let minVal = "0", maxVal = "100";
+          if (Array.isArray(rowData.val)) {
+            minVal = rowData.val[0];
+            maxVal = rowData.val[1];
+          } else if (typeof rowData.val === "string" && rowData.val.includes(" and ")) {
+            const parts = rowData.val.split(" and ");
+            minVal = parts[0].trim();
+            maxVal = parts[1].trim();
+          }
+          const txtMin = document.createElement("input");
+          txtMin.type = "text";
+          txtMin.className = "cond-min";
+          txtMin.value = minVal;
+          txtMin.placeholder = "Min";
+          txtMin.oninput = () => updateJamfPreview(soundId);
+
+          const spanAnd = document.createElement("span");
+          spanAnd.textContent = "and";
+
+          const txtMax = document.createElement("input");
+          txtMax.type = "text";
+          txtMax.className = "cond-max";
+          txtMax.value = maxVal;
+          txtMax.placeholder = "Max";
+          txtMax.oninput = () => updateJamfPreview(soundId);
+
+          valBox.appendChild(txtMin);
+          valBox.appendChild(spanAnd);
+          valBox.appendChild(txtMax);
+        } else {
+          const txtVal = document.createElement("input");
+          txtVal.type = "text";
+          txtVal.className = "cond-val";
+          txtVal.value = (rowData.val !== undefined && !Array.isArray(rowData.val)) ? rowData.val : "1";
+          txtVal.placeholder = "Value";
+          txtVal.oninput = () => updateJamfPreview(soundId);
+          valBox.appendChild(txtVal);
+        }
+      }
+      renderValControl();
+      row.appendChild(valBox);
+
+      // 5. Closing Parentheses Dropdown
+      const selClose = document.createElement("select");
+      selClose.className = "jamf-parens jamf-close-parens";
+      ["", ")", "))", ")))"].forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p;
+        opt.textContent = p || "--";
+        if (p === (rowData.close || "")) opt.selected = true;
+        selClose.appendChild(opt);
+      });
+      selClose.onchange = () => updateJamfPreview(soundId);
+      row.appendChild(selClose);
+
+      // 6. And / Or Connector Dropdown
+      const selLogic = document.createElement("select");
+      selLogic.className = "jamf-logic-select";
+      ["AND", "OR", "NAND", "NOR"].forEach(l => {
+        const opt = document.createElement("option");
+        opt.value = l;
+        opt.textContent = l.toLowerCase();
+        if (l === (rowData.logic || "AND")) opt.selected = true;
+        selLogic.appendChild(opt);
+      });
+      selLogic.onchange = () => updateJamfPreview(soundId);
+      row.appendChild(selLogic);
+
+      // 7. Delete Button
+      const btnDel = document.createElement("button");
+      btnDel.className = "btn-sm btn-danger";
+      btnDel.textContent = "✕";
+      btnDel.title = "Delete Criterion";
+      btnDel.onclick = () => {
+        row.remove();
+        updateJamfPreview(soundId);
+      };
+      row.appendChild(btnDel);
+
+      // Event Listeners for Crit & Op changes
+      selCrit.onchange = () => {
+        if (selCrit.value === "__custom__") {
+          customBox.style.display = "flex";
+          txtCustom.focus();
+        } else {
+          customBox.style.display = "none";
+          CRITERIA_PRESETS.forEach(grp => {
+            const found = grp.items.find(i => i.dref === selCrit.value);
+            if (found) {
+              if (found.defaultOp) selOp.value = found.defaultOp;
+              rowData.val = found.defaultVal;
+            }
+          });
+        }
+        renderValControl();
+        updateJamfPreview(soundId);
+      };
+
+      txtCustom.oninput = () => {
+        const m = txtCustom.value.match(/^(.+?)\[(\d+)\]$/);
+        if (m) {
+          txtCustom.value = m[1];
+          txtIndex.value = m[2];
+        }
+        updateJamfPreview(soundId);
+      };
+      txtIndex.oninput = () => updateJamfPreview(soundId);
+
+      selOp.onchange = () => {
+        renderValControl();
+        updateJamfPreview(soundId);
+      };
+
+      return row;
+    }
+
+    function addJamfCriterion(soundId) {
+      const rowsBox = document.getElementById(`jamf_rows_${soundId}`);
+      if (!rowsBox) return;
+      const newRow = createJamfRowElement(soundId, {
+        open: "",
+        crit: "sim/flightmodel/failures/onground_any",
+        op: "==",
+        val: "1",
+        close: "",
+        logic: "AND"
+      }, rowsBox.children.length);
+      rowsBox.appendChild(newRow);
+      updateJamfPreview(soundId);
+    }
+
+    function updateJamfPreview(soundId) {
+      const rowsBox = document.getElementById(`jamf_rows_${soundId}`);
+      if (!rowsBox) return;
+
+      const rows = Array.from(rowsBox.children);
+      const terms = [];
+      const logics = [];
+      let openCount = 0;
+      let closeCount = 0;
+
+      rows.forEach((r, idx) => {
+        const selOpen = r.querySelector(".jamf-open-parens");
+        const selCrit = r.querySelector(".jamf-crit-select");
+        const txtCustom = r.querySelector(".jamf-custom-dref");
+        const selOp = r.querySelector(".jamf-op-select");
+        const selClose = r.querySelector(".jamf-close-parens");
+        const selLogic = r.querySelector(".jamf-logic-select");
+
+        const openP = selOpen ? selOpen.value : "";
+        const closeP = selClose ? selClose.value : "";
+        const connector = selLogic ? selLogic.value : "AND";
+
+        if (openP) openCount += openP.length;
+        if (closeP) closeCount += closeP.length;
+
+        let dref = selCrit ? selCrit.value : "";
+        if (dref === "__custom__") {
+          const rawD = txtCustom ? txtCustom.value.trim() : "";
+          const txtIndex = r.querySelector(".jamf-custom-index");
+          const rawI = txtIndex ? txtIndex.value.trim() : "";
+          if (rawD && rawI !== "") {
+            dref = `${rawD}[${rawI}]`;
+          } else {
+            dref = rawD;
+          }
+        }
+
+        const op = selOp ? selOp.value : "==";
+        let atomic = "";
+
+        if (dref === "__played__" || op === "has_played") {
+          const selAnn = r.querySelector(".jamf-ann-select");
+          const ann = selAnn ? selAnn.value : "SafetyBriefing";
+          atomic = `played ${ann}`;
+        } else if (op === "between") {
+          const minInp = r.querySelector(".cond-min");
+          const maxInp = r.querySelector(".cond-max");
+          const mn = minInp ? minInp.value.trim() : "0";
+          const mx = maxInp ? maxInp.value.trim() : "100";
+          atomic = `${dref || "sim/..."} between ${mn} and ${mx}`;
+        } else {
+          const valInp = r.querySelector(".cond-val");
+          const v = valInp ? valInp.value.trim() : "1";
+          atomic = `${dref || "sim/..."} ${op} ${v}`;
+        }
+
+        terms.push(`${openP}${atomic}${closeP}`);
+        logics.push(connector);
+
+        if (selLogic) {
+          if (idx === rows.length - 1) {
+            selLogic.style.opacity = "0.4";
+            selLogic.title = "No following criterion";
+          } else {
+            selLogic.style.opacity = "1";
+            selLogic.title = "Connector to next criterion";
+          }
+        }
+      });
+
+      let formulaStr = "";
+      if (terms.length === 0) {
+        formulaStr = "(none - always triggers)";
+      } else {
+        formulaStr = terms.map((t, idx) => idx < terms.length - 1 ? `${t} ${logics[idx]}` : t).join(" ");
+      }
+
+      const formulaEl = document.getElementById(`formula_${soundId}`);
+      if (formulaEl) formulaEl.textContent = formulaStr;
+
+      const badgeEl = document.getElementById(`paren_badge_${soundId}`);
+      if (badgeEl) {
+        if (openCount === closeCount) {
+          badgeEl.className = "paren-badge paren-valid";
+          badgeEl.textContent = `✔ Balanced (${openCount})`;
+        } else {
+          badgeEl.className = "paren-badge paren-warning";
+          badgeEl.textContent = `⚠️ Unbalanced: ${openCount} open, ${closeCount} closed`;
+        }
+      }
+
+      syncFromUI();
+    }
+
+    function toggleTriggerActive(soundId, isActive, ann) {
+      if (isActive) {
+        state.triggers[soundId] = {
+          when: [...(ann.defaultConds || ["sim/flightmodel/failures/onground_any == 1"])],
+          delay: ann.defaultDelay || 2
+        };
+        if (ann.repeat) state.triggers[soundId].repeat = true;
+        if (ann.cooldown) state.triggers[soundId].cooldown = ann.cooldown;
+      } else {
+        delete state.triggers[soundId];
+      }
+      renderTriggers();
+      updateLiveJSON();
+    }
+
+    function expandAll() {
+      document.querySelectorAll(".trigger-card").forEach(c => {
+        const body = c.querySelector("[id^='body_']");
+        if (body) body.style.display = "flex";
+      });
+    }
+
+    function collapseAll() {
+      document.querySelectorAll(".trigger-card").forEach(c => {
+        const body = c.querySelector("[id^='body_']");
+        if (body) body.style.display = "none";
+      });
+    }
+
+    function promptAddCustomTrigger() {
+      const name = prompt("Enter custom announcement identifier (e.g. PurserWelcome, CabinLightDim):");
+      if (name) {
+        const cleaned = name.replace(/[^A-Za-z0-9_\-]/g, "").trim();
+        if (cleaned) {
+          state.triggers[cleaned] = {
+            when: ["sim/flightmodel/failures/onground_any == 1"],
+            delay: 2
+          };
+          renderTriggers();
+          updateLiveJSON();
+        }
+      }
+    }
+
+    function removeCustomTrigger(soundId) {
+      delete state.triggers[soundId];
+      renderTriggers();
+      updateLiveJSON();
     }
 
     function syncFromUI() {
-      state.name = document.getElementById("acfName").value.trim();
-      state.author = document.getElementById("acfAuthor").value.trim();
-      const icaoStr = document.getElementById("acfIcaos").value.trim();
-      state.aircraft_icao_match = icaoStr.split(",").map(s => s.trim()).filter(Boolean);
+      // 1. Meta fields
+      const elName = document.getElementById("acfName");
+      if (elName) state.name = elName.value.trim();
+      const elAuth = document.getElementById("acfAuthor");
+      if (elAuth) state.author = elAuth.value.trim();
+      const elIcaos = document.getElementById("acfIcaos");
+      if (elIcaos) {
+        state.aircraft_icao_match = elIcaos.value.trim().split(",").map(s => s.trim()).filter(Boolean);
+      }
 
+      // 2. Cockpit hardware mappings
+      const hwPa = document.getElementById("hwPaVolume");
+      const hwIdx = document.getElementById("hwPaIndex");
+      const hwCall = document.getElementById("hwCabinCall");
+      const hwReady = document.getElementById("hwCabinReady");
+      state.hardware_mappings = {
+        pa_volume_dataref: hwPa ? hwPa.value.trim() : "",
+        pa_volume_index: hwIdx ? (parseInt(hwIdx.value) || 0) : 0,
+        cabin_call_annunciator_dataref: hwCall ? hwCall.value.trim() : "",
+        cabin_ready_command: hwReady ? hwReady.value.trim() : ""
+      };
+
+      // 3. Triggers
       const cards = document.querySelectorAll(".trigger-card");
       const newTriggers = {};
 
       cards.forEach(card => {
-        const titleBadge = card.querySelector(".trigger-name-badge span").textContent.replace("📢 ", "").trim();
-        const rows = card.querySelectorAll(".condition-row");
+        const chk = card.querySelector("input[type='checkbox'][id^='chk_']");
+        if (!chk || !chk.checked) return;
+
+        const soundId = chk.id.replace("chk_", "");
+        const rowsBox = document.getElementById(`jamf_rows_${soundId}`);
         const whenArr = [];
 
-        rows.forEach(r => {
-          const dref = r.querySelector("input[type='text']").value.trim();
-          const op = r.querySelectorAll("select")[1].value;
-          const val = r.querySelectorAll("input[type='text']")[1].value.trim();
-          if (dref) {
-            whenArr.push(`${dref} ${op} ${val}`);
-          }
-        });
+        if (rowsBox) {
+          const rows = Array.from(rowsBox.children);
+          const rowTerms = [];
+          const connectors = [];
+          let hasComplex = false;
 
-        const delay = parseFloat(document.getElementById(`delay_${titleBadge}`).value) || 0;
-        const cooldown = parseFloat(document.getElementById(`cool_${titleBadge}`).value) || 300;
-        const repeat = document.getElementById(`rep_${titleBadge}`).checked;
+          rows.forEach((r, idx) => {
+            const selOpen = r.querySelector(".jamf-open-parens");
+            const selCrit = r.querySelector(".jamf-crit-select");
+            const txtCustom = r.querySelector(".jamf-custom-dref");
+            const selOp = r.querySelector(".jamf-op-select");
+            const selClose = r.querySelector(".jamf-close-parens");
+            const selLogic = r.querySelector(".jamf-logic-select");
+
+            const openP = selOpen ? selOpen.value : "";
+            const closeP = selClose ? selClose.value : "";
+            const conn = selLogic ? selLogic.value : "AND";
+
+            if (openP || closeP || (conn !== "AND" && idx < rows.length - 1)) {
+              hasComplex = true;
+            }
+
+            let dref = selCrit ? selCrit.value : "";
+            if (dref === "__custom__") {
+              const rawD = txtCustom ? txtCustom.value.trim() : "";
+              const txtIndex = r.querySelector(".jamf-custom-index");
+              const rawI = txtIndex ? txtIndex.value.trim() : "";
+              if (rawD && rawI !== "") {
+                dref = `${rawD}[${rawI}]`;
+              } else {
+                dref = rawD;
+              }
+            }
+
+            const op = selOp ? selOp.value : "==";
+            let atomic = "";
+
+            if (dref === "__played__" || op === "has_played") {
+              const selAnn = r.querySelector(".jamf-ann-select");
+              const ann = selAnn ? selAnn.value : "SafetyBriefing";
+              atomic = `played ${ann}`;
+            } else if (op === "between") {
+              const minInp = r.querySelector(".cond-min");
+              const maxInp = r.querySelector(".cond-max");
+              const mn = minInp ? minInp.value.trim() : "0";
+              const mx = maxInp ? maxInp.value.trim() : "100";
+              atomic = `${dref || "sim/..."} between ${mn} and ${mx}`;
+            } else {
+              const valInp = r.querySelector(".cond-val");
+              const v = valInp ? valInp.value.trim() : "1";
+              atomic = `${dref || "sim/..."} ${op} ${v}`;
+            }
+
+            rowTerms.push(`${openP}${atomic}${closeP}`);
+            connectors.push(conn);
+          });
+
+          if (rowTerms.length > 0) {
+            if (hasComplex) {
+              const fullExpr = rowTerms.map((t, idx) => idx < rowTerms.length - 1 ? `${t} ${connectors[idx]}` : t).join(" ");
+              whenArr.push(fullExpr);
+            } else {
+              rowTerms.forEach(t => whenArr.push(t));
+            }
+          }
+        }
+
+        const delayInput = document.getElementById(`delay_${soundId}`);
+        const coolInput = document.getElementById(`cool_${soundId}`);
+        const repInput = document.getElementById(`rep_${soundId}`);
+
+        const delay = delayInput ? (parseFloat(delayInput.value) || 0) : 0;
+        const cooldown = coolInput ? (parseFloat(coolInput.value) || 300) : 300;
+        const repeat = repInput ? repInput.checked : false;
 
         const trigDef = { when: whenArr };
         if (delay > 0) trigDef.delay = delay;
         if (cooldown !== 300) trigDef.cooldown = cooldown;
         if (repeat) trigDef.repeat = true;
 
-        newTriggers[titleBadge] = trigDef;
+        newTriggers[soundId] = trigDef;
       });
 
       state.triggers = newTriggers;
       updateLiveJSON();
-    }
-
-    function addTrigger(soundName) {
-      if (state.triggers[soundName]) return;
-      state.triggers[soundName] = {
-        when: ["sim/flightmodel/failures/onground_any == 1"],
-        delay: 2
-      };
-      renderTriggers();
-      updateLiveJSON();
-    }
-
-    function promptAddTrigger() {
-      const name = prompt("Enter sound name (e.g. BoardingComplete, FastenSeatbelt):");
-      if (name) addTrigger(name.trim());
-    }
-
-    function removeTrigger(soundName) {
-      delete state.triggers[soundName];
-      renderTriggers();
-      updateLiveJSON();
-    }
-
-    function addCondition(soundName) {
-      if (!state.triggers[soundName]) return;
-      let whenList = state.triggers[soundName].when;
-      if (typeof whenList === "string") whenList = [whenList];
-      if (!Array.isArray(whenList)) whenList = [];
-      whenList.push("sim/cockpit2/switches/beacon_on == 1");
-      state.triggers[soundName].when = whenList;
-      renderTriggers();
-      updateLiveJSON();
-    }
-
-    function removeCondition(soundName, idx) {
-      if (!state.triggers[soundName]) return;
-      let whenList = state.triggers[soundName].when;
-      if (Array.isArray(whenList)) {
-        whenList.splice(idx, 1);
-        if (whenList.length === 0) whenList = ["sim/flightmodel/failures/onground_any == 1"];
-        state.triggers[soundName].when = whenList;
-        renderTriggers();
-        updateLiveJSON();
-      }
     }
 
     function updateLiveJSON() {
@@ -672,11 +1576,21 @@
         name: "New Custom Airliner",
         author: "X-Plane Pilot",
         aircraft_icao_match: [],
+        hardware_mappings: {
+          pa_volume_dataref: "sim/cockpit2/radios/actuators/audio_volume_com1",
+          pa_volume_index: 0,
+          cabin_call_annunciator_dataref: "",
+          cabin_ready_command: ""
+        },
         triggers: {}
       };
       document.getElementById("acfName").value = state.name;
       document.getElementById("acfAuthor").value = state.author;
       document.getElementById("acfIcaos").value = "";
+      document.getElementById("hwPaVolume").value = state.hardware_mappings.pa_volume_dataref;
+      document.getElementById("hwPaIndex").value = "0";
+      document.getElementById("hwCabinCall").value = "";
+      document.getElementById("hwCabinReady").value = "";
       renderTriggers();
       updateLiveJSON();
     }
@@ -698,6 +1612,12 @@
           sel.onchange = () => {
             if (sel.value) loadConfigFile(sel.value);
           };
+
+          // Auto-load ToLiss_A320.json on startup if present and no profile loaded yet
+          if (!state._filename && files.includes("ToLiss_A320.json")) {
+            sel.value = "ToLiss_A320.json";
+            loadConfigFile("ToLiss_A320.json");
+          }
         }
       } catch (e) {
         console.log("Standalone mode or server not active yet.");
@@ -710,9 +1630,18 @@
         if (res.ok) {
           const data = await res.json();
           state = data;
+          state._filename = filename;
           document.getElementById("acfName").value = state.name || filename;
           document.getElementById("acfAuthor").value = state.author || "";
           document.getElementById("acfIcaos").value = (state.aircraft_icao_match || []).join(", ");
+
+          // Hardware mappings
+          const hw = state.hardware_mappings || {};
+          document.getElementById("hwPaVolume").value = hw.pa_volume_dataref || "";
+          document.getElementById("hwPaIndex").value = hw.pa_volume_index !== undefined ? hw.pa_volume_index : 7;
+          document.getElementById("hwCabinCall").value = hw.cabin_call_annunciator_dataref || "";
+          document.getElementById("hwCabinReady").value = hw.cabin_ready_command || "";
+
           renderTriggers();
           updateLiveJSON();
           showToast(`Loaded ${filename}`);

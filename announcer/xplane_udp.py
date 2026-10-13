@@ -37,6 +37,8 @@ class XPlaneUDP:
         self.last_received_time = 0
         self.connected = False
         self.packets_received = 0
+        self._last_retry_time = 0
+        self._retry_interval = 2.0  # seconds between RREF resubscription pings when disconnected
 
     def start(self):
         """Starts the UDP client and background receive thread."""
@@ -128,6 +130,19 @@ class XPlaneUDP:
         except Exception as e:
             logger.debug(f"Failed to send RREF for {dataref_name}: {e}")
 
+    def send_command(self, command_name):
+        """Sends an X-Plane command packet (CMND)."""
+        if not self.sock or not command_name:
+            return
+        try:
+            cmd_hdr = b"CMND\x00"
+            cmd_encoded = command_name.strip().encode("utf-8")
+            msg = cmd_hdr + cmd_encoded + b"\x00"
+            self.sock.sendto(msg, (self.xplane_ip, self.xplane_port))
+            logger.info(f"Sent X-Plane command: {command_name}")
+        except Exception as e:
+            logger.debug(f"Failed to send command '{command_name}': {e}")
+
     def get_value(self, dataref_name, default=0.0):
         """Gets the most recently received value for a dataref."""
         with self._lock:
@@ -170,8 +185,15 @@ class XPlaneUDP:
                                     self._values[dref_name] = value
 
             except socket.timeout:
-                if self.connected and (time.time() - self.last_received_time) >= 3.0:
+                now = time.time()
+                if self.connected and (now - self.last_received_time) >= 3.0:
                     self.connected = False
+                    logger.info("Lost connection to X-Plane (timeout). Entering auto-reconnect mode...")
+
+                # Auto-retry connection ping when disconnected
+                if not self.connected and (now - self._last_retry_time) >= self._retry_interval:
+                    self._last_retry_time = now
+                    self.resubscribe_all()
             except Exception as e:
                 if self._running:
                     logger.debug(f"UDP receive error: {e}")

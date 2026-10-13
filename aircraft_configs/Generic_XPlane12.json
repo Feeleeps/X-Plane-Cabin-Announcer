@@ -3,6 +3,12 @@
   "author": "X-Plane Cabin Announcer",
   "description": "Universal configuration using standard X-Plane 12 datarefs.",
   "aircraft_icao_match": ["B738", "A333", "MD82", "B744", "A320"],
+  "hardware_mappings": {
+    "pa_volume_dataref": "sim/cockpit2/radios/actuators/audio_volume_com1",
+    "pa_volume_index": 0,
+    "cabin_call_annunciator_dataref": "",
+    "cabin_ready_command": ""
+  },
   "triggers": {
     "BoardingWelcome": {
       "when": [
@@ -37,43 +43,31 @@
     "AfterTakeoff": {
       "when": [
         "sim/flightmodel/failures/onground_any == 0",
-        "sim/flightmodel/position/y_agl climbs_past 457.2"
+        "sim/cockpit2/gauges/indicators/radio_altimeter_height_ft_pilot climbs_past 1500"
       ],
       "delay": 5
     },
-    "TopOfClimbPilot": {
-      "when": [
-        "sim/flightmodel/failures/onground_any == 0",
-        "sim/flightmodel/position/elevation climbs_past 3048.0"
-      ],
-      "delay": 8
-    },
+
     "FastenSeatbelt": {
       "when": [
         "sim/flightmodel/failures/onground_any == 0",
-        "sim/flightmodel/position/y_agl > 1500.0",
+        "sim/cockpit2/gauges/indicators/altitude_ft_pilot > 5000",
         "sim/cockpit2/switches/fasten_seat_belts -> 1"
       ],
       "delay": 1,
       "cooldown": 60,
       "repeat": true
     },
-    "TopOfDescentPilot": {
+    "DescentSeatbelts": {
       "when": [
         "sim/flightmodel/failures/onground_any == 0",
-        "sim/flightmodel/position/elevation descends_past 3048.0"
+        "sim/cockpit2/gauges/indicators/altitude_ft_pilot descends_past 10000"
       ],
       "delay": 5
     },
-    "Descent": {
-      "when": [
-        "sim/flightmodel/failures/onground_any == 0",
-        "sim/flightmodel/position/y_agl descends_past 762.0"
-      ],
-      "delay": 3
-    },
     "AfterLanding": {
       "when": [
+        "played DescentSeatbelts",
         "sim/flightmodel/failures/onground_any == 1",
         "sim/flightmodel/position/groundspeed < 15.0"
       ],

@@ -13,14 +13,177 @@ Features:
 
 import os
 import sys
+import time
 import json
+import threading
 import subprocess
 from datetime import datetime
+import tkinter as tk
 import customtkinter as ctk
 
 # Configure CustomTkinter default styling
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
+
+class ToolTip:
+    """
+    Lightweight, dark-styled hover tooltip for CustomTkinter and Tkinter widgets.
+    Binds to both widget and internal canvas/labels to guarantee smooth hover detection.
+    """
+    def __init__(self, widget, text, delay_ms=400):
+        self.widget = widget
+        self.text = text
+        self.delay_ms = delay_ms
+        self.tip_window = None
+        self._after_id = None
+
+        targets = [self.widget]
+        for attr in ("_canvas", "_text_label", "_image_label", "_check_box"):
+            inner = getattr(self.widget, attr, None)
+            if inner is not None:
+                targets.append(inner)
+
+        for target in targets:
+            try:
+                target.bind("<Enter>", self._on_enter, add="+")
+                target.bind("<Leave>", self._on_leave, add="+")
+                target.bind("<ButtonPress>", self._on_leave, add="+")
+            except Exception:
+                pass
+
+    def _on_enter(self, event=None):
+        self._schedule()
+
+    def _on_leave(self, event=None):
+        self._unschedule()
+        self._hide()
+
+    def _schedule(self):
+        self._unschedule()
+        try:
+            self._after_id = self.widget.after(self.delay_ms, self._show)
+        except Exception:
+            pass
+
+    def _unschedule(self):
+        if self._after_id:
+            try:
+                self.widget.after_cancel(self._after_id)
+            except Exception:
+                pass
+            self._after_id = None
+
+    def _show(self):
+        if self.tip_window or not self.text:
+            return
+        try:
+            if not self.widget.winfo_exists():
+                return
+            rx = self.widget.winfo_rootx()
+            ry = self.widget.winfo_rooty()
+            rw = self.widget.winfo_width()
+            rh = self.widget.winfo_height()
+            screen_w = self.widget.winfo_screenwidth()
+            screen_h = self.widget.winfo_screenheight()
+        except Exception:
+            return
+
+        try:
+            self.tip_window = tw = tk.Toplevel(self.widget)
+            tw.wm_overrideredirect(True)
+            tw.attributes("-topmost", True)
+
+            frame = tk.Frame(tw, bg="#1e293b", bd=1, relief="solid", highlightbackground="#38bdf8", highlightthickness=1)
+            frame.pack()
+            lbl = tk.Label(
+                frame,
+                text=self.text,
+                justify="left",
+                bg="#1e293b",
+                fg="#f1f5f9",
+                font=("Segoe UI", 9),
+                padx=8,
+                pady=4
+            )
+            lbl.pack()
+
+            tw.update_idletasks()
+            tip_w = tw.winfo_reqwidth()
+            tip_h = tw.winfo_reqheight()
+
+            # Default positioning: below widget
+            x = rx + 8
+            y = ry + rh + 6
+
+            # Screen boundary detection: prevent overflowing monitor edges
+            if x + tip_w > screen_w - 12:
+                # Align tooltip's right edge with widget's right edge
+                x = rx + rw - tip_w
+                if x + tip_w > screen_w - 12:
+                    x = screen_w - tip_w - 12
+            if x < 10:
+                x = 10
+
+            # If overflowing bottom of screen, flip to display above widget
+            if y + tip_h > screen_h - 12:
+                y = ry - tip_h - 6
+            if y < 10:
+                y = 10
+
+            tw.wm_geometry(f"+{int(x)}+{int(y)}")
+        except Exception:
+            self._hide()
+
+    def _hide(self):
+        if self.tip_window:
+            try:
+                self.tip_window.destroy()
+            except Exception:
+                pass
+            self.tip_window = None
+
+def apply_window_icon(root, base_dir):
+    """
+    Applies the custom aircraft application icon to a Tk/CustomTkinter window.
+    Ensures the icon stays active on Windows title bar, taskbar, and Alt-Tab switcher
+    even after window resizes, state changes, or Tkinter wrapper re-creations.
+    """
+    ico_path = os.path.join(base_dir, "app_icon.ico")
+    png_path = os.path.join(base_dir, "app_icon.png")
+
+    if sys.platform == "win32" and os.path.exists(ico_path):
+        try:
+            root.wm_iconbitmap(default=ico_path)
+            root.iconbitmap(ico_path)
+        except Exception:
+            pass
+
+        try:
+            import ctypes
+            root.update_idletasks()
+            wid = root.winfo_id()
+            hwnd = ctypes.windll.user32.GetAncestor(wid, 2)
+            if not hwnd:
+                hwnd = ctypes.windll.user32.GetParent(wid)
+            if hwnd:
+                user32 = ctypes.windll.user32
+                IMAGE_ICON = 1
+                LR_LOADFROMFILE = 0x00000010
+                hicon_big = user32.LoadImageW(None, ico_path, IMAGE_ICON, 32, 32, LR_LOADFROMFILE)
+                hicon_small = user32.LoadImageW(None, ico_path, IMAGE_ICON, 16, 16, LR_LOADFROMFILE)
+                if hicon_small:
+                    user32.SendMessageW(hwnd, 0x0080, 0, hicon_small)  # WM_SETICON, ICON_SMALL
+                if hicon_big:
+                    user32.SendMessageW(hwnd, 0x0080, 1, hicon_big)    # WM_SETICON, ICON_BIG
+        except Exception:
+            pass
+    elif os.path.exists(png_path):
+        try:
+            from PIL import ImageTk, Image
+            img = ImageTk.PhotoImage(Image.open(png_path))
+            root.iconphoto(True, img)
+        except Exception:
+            pass
 
 class CabinAnnouncerGUI:
     def __init__(self, root, audio_engine, pack_manager, config_manager, rule_engine, udp_client, base_dir, detector=None, auto_detect_enabled=True):
@@ -69,6 +232,11 @@ class CabinAnnouncerGUI:
         # Restore saved settings
         self._restore_settings()
 
+        # System Tray Icon Support
+        self.tray_icon = None
+        self._tray_thread = None
+        self._init_tray()
+
         # Start periodic GUI update loop
         self._update_loop()
 
@@ -78,6 +246,7 @@ class CabinAnnouncerGUI:
         self.root.minsize(980, 750)
         self.root.configure(fg_color=self.c["bg"])
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+        apply_window_icon(self.root, self.base_dir)
 
     def _build_widgets(self):
         # 1. Top Header Bar
@@ -96,14 +265,6 @@ class CabinAnnouncerGUI:
         )
         lbl_title.pack(anchor="w")
 
-        lbl_sub = ctk.CTkLabel(
-            title_box,
-            text="Fenix A320 Audio Format  •  Real-Time Cabin PA Filter  •  Aircraft Dataref Triggers",
-            font=ctk.CTkFont(family="Segoe UI", size=12),
-            text_color=self.c["fg_muted"]
-        )
-        lbl_sub.pack(anchor="w")
-
         # Status Pills
         status_box = ctk.CTkFrame(header, fg_color="transparent")
         status_box.pack(side="right", padx=18, pady=12)
@@ -119,6 +280,7 @@ class CabinAnnouncerGUI:
             pady=6
         )
         self.pill_phase.pack(side="left", padx=(0, 10))
+        ToolTip(self.pill_phase, "Current flight phase tracked by the rule engine.")
 
         self.pill_conn = ctk.CTkLabel(
             status_box,
@@ -130,7 +292,23 @@ class CabinAnnouncerGUI:
             padx=14,
             pady=6
         )
-        self.pill_conn.pack(side="left")
+        self.pill_conn.pack(side="left", padx=(0, 10))
+        ToolTip(self.pill_conn, "Live UDP connection status with X-Plane 12 (Port 49000).")
+
+        # Minimize to System Tray button
+        btn_min = ctk.CTkButton(
+            status_box,
+            text="Minimize to Tray",
+            width=120,
+            height=28,
+            corner_radius=8,
+            fg_color=self.c["btn_navy"],
+            hover_color=self.c["btn_navy_hover"],
+            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+            command=self._minimize_to_tray
+        )
+        btn_min.pack(side="left")
+        ToolTip(btn_min, "Minimizes the flight deck window to the Windows System Tray.")
 
         # 2. Main Body Grid (Two Strictly Equal Columns)
         main_body = ctk.CTkFrame(self.root, fg_color="transparent")
@@ -190,11 +368,14 @@ class CabinAnnouncerGUI:
             dropdown_fg_color=self.c["card_inner"]
         )
         self.opt_airline.grid(row=0, column=1, sticky="ew", padx=(4, 6))
+        ToolTip(self.opt_airline, "Select which airline sound pack to use for announcements.")
 
         btn_open_air = ctk.CTkButton(row_airline, text="📂", width=34, corner_radius=8, fg_color=self.c["btn_navy"], hover_color=self.c["btn_navy_hover"], command=self._open_airlines_dir)
         btn_open_air.grid(row=0, column=2, padx=(0, 4))
+        ToolTip(btn_open_air, "Open the airlines folder in Windows File Explorer.")
         btn_ref_air = ctk.CTkButton(row_airline, text="🔄", width=34, corner_radius=8, fg_color=self.c["btn_navy"], hover_color=self.c["btn_navy_hover"], command=self._refresh_packs)
         btn_ref_air.grid(row=0, column=3)
+        ToolTip(btn_ref_air, "Rescan the airlines folder for newly added sound packs.")
 
         self.lbl_airline_info = ctk.CTkLabel(card, text="Active Pack: DEFAULT (15 audio files)", font=ctk.CTkFont(family="Segoe UI", size=11), text_color=self.c["accent"])
         self.lbl_airline_info.pack(anchor="w", padx=16, pady=(1, 6))
@@ -222,13 +403,17 @@ class CabinAnnouncerGUI:
             dropdown_fg_color=self.c["card_inner"]
         )
         self.opt_config.grid(row=0, column=1, sticky="ew", padx=(4, 6))
+        ToolTip(self.opt_config, "Select the aircraft dataref trigger profile for your active aircraft.")
 
         btn_open_cfg = ctk.CTkButton(row_config, text="📂", width=34, corner_radius=8, fg_color=self.c["btn_navy"], hover_color=self.c["btn_navy_hover"], command=self._open_configs_dir)
         btn_open_cfg.grid(row=0, column=2, padx=(0, 4))
+        ToolTip(btn_open_cfg, "Open the aircraft configs folder in Windows File Explorer.")
         btn_ref_cfg = ctk.CTkButton(row_config, text="🔄", width=34, corner_radius=8, fg_color=self.c["btn_navy"], hover_color=self.c["btn_navy_hover"], command=self._refresh_configs)
         btn_ref_cfg.grid(row=0, column=3, padx=(0, 4))
+        ToolTip(btn_ref_cfg, "Rescan the aircraft configs folder for profile JSON files.")
         btn_edit_cfg = ctk.CTkButton(row_config, text="✏️ Editor", width=68, corner_radius=8, fg_color="#1e3a5f", hover_color="#2563eb", font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"), command=self._open_web_editor)
         btn_edit_cfg.grid(row=0, column=4)
+        ToolTip(btn_edit_cfg, "Open the Web Aircraft Config Editor in your default web browser.")
 
         self.lbl_config_info = ctk.CTkLabel(card, text="Active Profile: Generic X-Plane 12 Airliner", font=ctk.CTkFont(family="Segoe UI", size=11), text_color=self.c["accent"])
         self.lbl_config_info.pack(anchor="w", padx=16, pady=(1, 8))
@@ -246,6 +431,7 @@ class CabinAnnouncerGUI:
         )
         self.sw_auto_trigger.pack(side="left", padx=(0, 10))
         self.sw_auto_trigger.select()
+        ToolTip(self.sw_auto_trigger, "Enable or disable automated announcement triggers based on aircraft altitude, speed, and datarefs.")
 
         self.sw_auto_detect = ctk.CTkSwitch(
             row_actions,
@@ -258,6 +444,7 @@ class CabinAnnouncerGUI:
             self.sw_auto_detect.select()
         else:
             self.sw_auto_detect.deselect()
+        ToolTip(self.sw_auto_detect, "Automatically detect the loaded aircraft type and livery from X-Plane and select matching profiles.")
 
         btn_reset = ctk.CTkButton(
             row_actions,
@@ -271,6 +458,7 @@ class CabinAnnouncerGUI:
             command=self.rule_engine.reset_flight_state
         )
         btn_reset.pack(side="right")
+        ToolTip(btn_reset, "Resets flight state and re-arms all announcement triggers for a new flight or turnaround without restarting the app.")
 
     def _build_dsp_filter_card(self, parent):
         card = ctk.CTkFrame(parent, fg_color=self.c["card_bg"], corner_radius=14, border_width=1, border_color=self.c["card_border"])
@@ -297,6 +485,7 @@ class CabinAnnouncerGUI:
         )
         self.sw_pa_filter.pack(side="left")
         self.sw_pa_filter.select()
+        ToolTip(self.sw_pa_filter, "Toggle the real-time cabin PA speaker acoustic DSP filter effect.")
 
         self.seg_mode = ctk.CTkSegmentedButton(
             row_top,
@@ -309,6 +498,7 @@ class CabinAnnouncerGUI:
         )
         self.seg_mode.pack(side="right")
         self.seg_mode.set("Overhead PA")
+        ToolTip(self.seg_mode, "Select filter acoustics: Overhead PA (cabin speaker acoustics) or Intercom (crew handset frequency curve).")
 
         # Filter Intensity Slider
         row_slider = ctk.CTkFrame(card, fg_color="transparent")
@@ -326,6 +516,7 @@ class CabinAnnouncerGUI:
         )
         self.slider_pa_intensity.pack(side="left", fill="x", expand=True, padx=(4, 10))
         self.slider_pa_intensity.set(90)
+        ToolTip(self.slider_pa_intensity, "Adjust the wet/dry presence intensity of the cabin PA speaker effect.")
 
         self.lbl_dsp_val = ctk.CTkLabel(row_slider, text="90%", width=40, font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"))
         self.lbl_dsp_val.pack(side="right")
@@ -362,59 +553,107 @@ class CabinAnnouncerGUI:
             return slider, lbl
 
         self.slider_master, self.lbl_master_vol = _make_slider("Master Volume:", 80, self._on_master_vol_change)
-        self.slider_announcement, self.lbl_announcement_vol = _make_slider("Announcements:", 100, self._on_announcement_vol_change)
-        self.slider_music, self.lbl_music_vol = _make_slider("Boarding Music:", 50, self._on_music_vol_change)
+        ToolTip(self.slider_master, "Master volume control for all audio playback.")
 
-        btn_stop = ctk.CTkButton(
-            card,
+        self.slider_announcement, self.lbl_announcement_vol = _make_slider("Announcements:", 100, self._on_announcement_vol_change)
+        ToolTip(self.slider_announcement, "Audio volume level for cabin announcements.")
+
+        # ACP PA Volume sync switch
+        row_sync = ctk.CTkFrame(card, fg_color="transparent")
+        row_sync.pack(fill="x", padx=16, pady=(1, 3))
+        self.sw_sync_acp = ctk.CTkSwitch(
+            row_sync,
+            text="Sync Announcement Vol with Cockpit ACP PA Knob",
+            font=ctk.CTkFont(family="Segoe UI", size=11),
+            text_color=self.c["fg_muted"],
+            progress_color=self.c["accent"],
+            command=self._on_toggle_acp_sync
+        )
+        self.sw_sync_acp.pack(side="left")
+        ToolTip(self.sw_sync_acp, "Dynamically sync announcement volume with the cockpit Audio Control Panel (ACP) PA knob in real time.")
+
+        self.slider_music, self.lbl_music_vol = _make_slider("Boarding Music:", 50, self._on_music_vol_change)
+        ToolTip(self.slider_music, "Audio volume level for background boarding music.")
+
+        row_stop = ctk.CTkFrame(card, fg_color="transparent")
+        row_stop.pack(fill="x", padx=16, pady=(8, 12))
+
+        btn_stop_ann = ctk.CTkButton(
+            row_stop,
+            text="⏹  Stop Announcement",
+            fg_color="#334155",
+            hover_color="#475569",
+            text_color="#e2e8f0",
+            corner_radius=8,
+            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+            command=self.audio.stop_announcement
+        )
+        btn_stop_ann.pack(side="left", fill="x", expand=True, padx=(0, 6))
+        ToolTip(btn_stop_ann, "Immediately stops any announcement currently playing.")
+
+        btn_stop_all = ctk.CTkButton(
+            row_stop,
             text="⏹  Stop All Audio",
             fg_color="#5a1827",
             hover_color="#7f1d1d",
             text_color="#fca5a5",
             corner_radius=8,
-            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
             command=self.audio.stop_all
         )
-        btn_stop.pack(fill="x", padx=16, pady=(8, 12))
+        btn_stop_all.pack(side="right", fill="x", expand=True, padx=(6, 0))
+        ToolTip(btn_stop_all, "Immediately halts all announcements and background boarding music.")
 
     def _build_telemetry_card(self, parent):
         card = ctk.CTkFrame(parent, fg_color=self.c["card_bg"], corner_radius=14, border_width=1, border_color=self.c["card_border"])
-        card.pack(fill="both", expand=True)
+        card.pack(fill="x", pady=(0, 10))
 
         header_lbl = ctk.CTkLabel(
             card,
-            text="📊  Live Dataref Telemetry",
+            text="📊  Flight Activity & Boarding Control",
             font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
             text_color=self.c["accent"]
         )
         header_lbl.pack(anchor="w", padx=16, pady=(12, 6))
 
-        grid = ctk.CTkFrame(card, fg_color=self.c["card_inner"], corner_radius=10)
-        grid.pack(fill="both", expand=True, padx=14, pady=(0, 12))
+        # Flight Activity / Trigger State Banner
+        state_box = ctk.CTkFrame(card, fg_color=self.c["card_inner"], corner_radius=10, border_width=1, border_color="#1e3a5f")
+        state_box.pack(fill="x", padx=14, pady=(0, 10))
 
-        self.telem_labels = {}
-        items = [
-            ("onground", "On Ground Status:"),
-            ("groundspeed", "Ground Speed:"),
-            ("alt_agl", "Altitude (AGL):"),
-            ("alt_msl", "Altitude (MSL):"),
-            ("beacon", "Beacon Light:"),
-            ("parkbrake", "Parking Brake:"),
-            ("seatbelts", "Seatbelt Signs:")
-        ]
+        row_st = ctk.CTkFrame(state_box, fg_color="transparent")
+        row_st.pack(fill="x", padx=12, pady=10)
 
-        for i, (k, title) in enumerate(items):
-            r = i // 2
-            c_base = (i % 2) * 2
-            lbl_title = ctk.CTkLabel(grid, text=title, font=ctk.CTkFont(family="Segoe UI", size=11), text_color=self.c["fg_muted"])
-            lbl_title.grid(row=r, column=c_base, sticky="w", padx=(12, 4), pady=5)
+        ctk.CTkLabel(
+            row_st,
+            text="CURRENT ACTIVITY:",
+            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+            text_color="#94a3b8"
+        ).pack(side="left", padx=(0, 8))
 
-            lbl_val = ctk.CTkLabel(grid, text="--", font=ctk.CTkFont(family="Consolas", size=11, weight="bold"), text_color="#38bdf8")
-            lbl_val.grid(row=r, column=c_base + 1, sticky="e", padx=(4, 16), pady=5)
-            self.telem_labels[k] = lbl_val
+        self.lbl_flight_state = ctk.CTkLabel(
+            row_st,
+            text="Waiting for telemetry...",
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            text_color="#38bdf8"
+        )
+        self.lbl_flight_state.pack(side="left")
 
-        grid.columnconfigure(1, weight=1)
-        grid.columnconfigure(3, weight=1)
+        # Boarding Control Button (Moved from Soundboard into Telemetry area)
+        row_board = ctk.CTkFrame(card, fg_color="transparent")
+        row_board.pack(fill="x", padx=14, pady=(0, 12))
+
+        self.btn_boarding = ctk.CTkButton(
+            row_board,
+            text="▶ Start Boarding",
+            fg_color="#065f46",
+            hover_color="#059669",
+            corner_radius=10,
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+            height=38,
+            command=self._on_boarding_button_click
+        )
+        self.btn_boarding.pack(fill="x")
+        ToolTip(self.btn_boarding, "Starts passenger boarding, dispatches the Boarding Welcome announcement, and begins boarding music. Click again when boarding finishes to complete boarding.")
 
     def _build_soundboard_card(self, parent):
         card = ctk.CTkFrame(parent, fg_color=self.c["card_bg"], corner_radius=14, border_width=1, border_color=self.c["card_border"])
@@ -432,21 +671,21 @@ class CabinAnnouncerGUI:
         grid.pack(fill="x", padx=14, pady=(0, 12))
 
         buttons = [
-            ("🛫 Boarding Welcome", "BoardingWelcome", "#0c4a6e", "#0284c7"),
-            ("🎵 Boarding Music", "BoardingMusic", "#064e3b", "#059669"),
-            ("🚪 Arm Doors", "ArmDoors", "#312e81", "#4f46e5"),
-            ("🦺 Safety Briefing", "SafetyBriefing", "#1e3a5f", "#2563eb"),
-            ("💺 Crew Seats Takeoff", "CrewSeatsTakeoff", "#451a03", "#d97706"),
-            ("🌤️ After Takeoff", "AfterTakeoff", "#0c4a6e", "#0284c7"),
-            ("🔔 Fasten Seatbelt", "FastenSeatbelt", "#312e81", "#4f46e5"),
-            ("⛰️ Top of Climb", "TopOfClimbPilot", "#1e3a5f", "#2563eb"),
-            ("📉 Top of Descent", "TopOfDescentPilot", "#1e3a5f", "#2563eb"),
-            ("🛬 Prepare for Landing", "Descent", "#451a03", "#d97706"),
-            ("🛬 After Landing", "AfterLanding", "#0c4a6e", "#0284c7"),
-            ("🚪 Disarm Doors", "DisarmDoors", "#312e81", "#4f46e5")
+            ("🎵 Boarding Music", "BoardingMusic", "#064e3b", "#059669", "Play or pause background passenger boarding music."),
+            ("🚪 Arm Doors", "ArmDoors", "#312e81", "#4f46e5", "Cabin crew announcement to arm slide doors and cross-check."),
+            ("🦺 Safety Briefing", "SafetyBriefing", "#1e3a5f", "#2563eb", "Standard passenger emergency equipment and safety briefing demonstration."),
+            ("💺 Crew Seats Takeoff", "CrewSeatsTakeoff", "#451a03", "#d97706", "Flight deck or purser alert for cabin crew to take seats for departure."),
+            ("📞 Cabin Ready", "CallCabinSecureTakeoff", "#1e3a5f", "#2563eb", "Cabin crew interphone call reporting cabin secure and ready for departure."),
+            ("🌤️ After Takeoff", "AfterTakeoff", "#0c4a6e", "#0284c7", "Post-departure welcome announcement upon reaching climb-out altitude."),
+            ("🔔 Fasten Seatbelt", "FastenSeatbelt", "#312e81", "#4f46e5", "Seatbelt sign chime and reminder announcement during turbulence."),
+            ("🛬 Descent & Cabin Prep", "DescentSeatbelts", "#1e3a5f", "#2563eb", "Commence descent and prepare cabin and galleys for landing."),
+            ("💺 Crew Seats Landing", "CrewSeatsLanding", "#451a03", "#d97706", "Flight deck chime and call for cabin crew to take seats for landing."),
+            ("🛬 After Landing", "AfterLanding", "#0c4a6e", "#0284c7", "Arrival welcome announcement after runway rollout and taxi-in."),
+            ("🚪 Disarm Doors", "DisarmDoors", "#312e81", "#4f46e5", "Cabin crew announcement to disarm slide doors at gate arrival."),
+            ("👋 Disembarking", "DisembarkStarted", "#064e3b", "#059669", "Passenger disembarkation and farewell announcement at arrival gate.")
         ]
 
-        for i, (label, sound_name, bg_col, hover_col) in enumerate(buttons):
+        for i, (label, sound_name, bg_col, hover_col, tip) in enumerate(buttons):
             r = i // 2
             c = i % 2
             btn = ctk.CTkButton(
@@ -457,12 +696,45 @@ class CabinAnnouncerGUI:
                 corner_radius=10,
                 font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
                 height=36,
-                command=lambda s=sound_name: self.rule_engine.trigger_sound_manually(s)
+                command=lambda s=sound_name: self._on_soundboard_click(s)
             )
             btn.grid(row=r, column=c, sticky="ew", padx=4, pady=4)
+            ToolTip(btn, tip)
 
         grid.columnconfigure(0, weight=1)
         grid.columnconfigure(1, weight=1)
+
+    def _on_soundboard_click(self, sound_name):
+        self.rule_engine.trigger_sound_manually(sound_name)
+
+    def _on_boarding_button_click(self):
+        if not self.rule_engine.boarding_started:
+            self.rule_engine.start_boarding()
+        elif not self.rule_engine.boarding_completed:
+            self.rule_engine.complete_boarding()
+        self._update_boarding_button()
+
+    def _update_boarding_button(self):
+        if not hasattr(self, "btn_boarding") or not self.btn_boarding.winfo_exists():
+            return
+        if not self.rule_engine.boarding_started:
+            self.btn_boarding.configure(
+                text="▶ Start Boarding",
+                fg_color="#065f46",
+                hover_color="#059669"
+            )
+        elif not self.rule_engine.boarding_completed:
+            self.btn_boarding.configure(
+                text="✅ Complete Boarding",
+                fg_color="#1e3a8a",
+                hover_color="#2563eb"
+            )
+        else:
+            self.btn_boarding.configure(
+                text="✓ Boarding Done",
+                fg_color="#334155",
+                hover_color="#475569"
+            )
 
     def _build_log_card(self, parent):
         card = ctk.CTkFrame(parent, fg_color=self.c["card_bg"], corner_radius=14, border_width=1, border_color=self.c["card_border"])
@@ -597,12 +869,19 @@ class CabinAnnouncerGUI:
         self.opt_config.set(target)
         self._on_config_selected(target)
 
+    def _on_toggle_acp_sync(self):
+        enabled = self.sw_sync_acp.get() == 1
+        status_txt = "ENABLED" if enabled else "DISABLED"
+        self.append_log(f"ACP PA Volume Knob Sync: {status_txt}")
+        self._save_settings()
+
     def _load_settings(self):
         default_settings = {
             "selected_airline": "DEFAULT",
             "selected_config": "Generic X-Plane 12 Airliner",
             "master_volume": 80,
             "announcement_volume": 100,
+            "sync_acp_volume": False,
             "music_volume": 50,
             "auto_triggers": True,
             "dsp_filter_enabled": True,
@@ -624,6 +903,7 @@ class CabinAnnouncerGUI:
             self.settings["selected_config"] = self.opt_config.get()
             self.settings["master_volume"] = int(self.slider_master.get())
             self.settings["announcement_volume"] = int(self.slider_announcement.get())
+            self.settings["sync_acp_volume"] = (self.sw_sync_acp.get() == 1)
             self.settings["music_volume"] = int(self.slider_music.get())
             self.settings["auto_triggers"] = (self.sw_auto_trigger.get() == 1)
             self.settings["dsp_filter_enabled"] = (self.sw_pa_filter.get() == 1)
@@ -646,6 +926,12 @@ class CabinAnnouncerGUI:
         a_vol = self.settings.get("announcement_volume", 100)
         self.slider_announcement.set(a_vol)
         self._on_announcement_vol_change(a_vol)
+
+        sync_acp = self.settings.get("sync_acp_volume", False)
+        if sync_acp:
+            self.sw_sync_acp.select()
+        else:
+            self.sw_sync_acp.deselect()
 
         mu_vol = self.settings.get("music_volume", 50)
         self.slider_music.set(mu_vol)
@@ -695,45 +981,76 @@ class CabinAnnouncerGUI:
         self.pill_phase.configure(text=f"PHASE: {phase}")
 
         values = self.udp.get_all_values()
-        
-        onground = values.get("sim/flightmodel/failures/onground_any")
-        if onground is not None:
-            txt = "YES (Ground)" if onground >= 0.5 else "NO (Airborne)"
-            self.telem_labels["onground"].configure(text=txt, text_color=self.c["green"] if onground >= 0.5 else "#38bdf8")
 
-        gs = values.get("sim/flightmodel/position/groundspeed")
-        if gs is not None:
-            kts = gs * 1.94384
-            self.telem_labels["groundspeed"].configure(text=f"{kts:.1f} kts")
+        # Update Flight State Summary Banner
+        state_summary = getattr(self.rule_engine, "state_summary", f"Phase: {phase}")
+        self.lbl_flight_state.configure(text=state_summary)
 
-        agl = values.get("sim/flightmodel/position/y_agl")
-        if agl is not None:
-            ft = agl * 3.28084
-            self.telem_labels["alt_agl"].configure(text=f"{ft:,.0f} ft")
+        # 3. Live Cockpit ACP PA Volume Knob Synchronization
+        if self.sw_sync_acp.get() == 1 and self.udp.is_connected():
+            cfg = self.rule_engine.active_config or {}
+            hw = cfg.get("hardware_mappings") or {}
+            dref_name = hw.get("pa_volume_dataref")
+            idx = hw.get("pa_volume_index")
 
-        msl = values.get("sim/flightmodel/position/elevation")
-        if msl is not None:
-            ft = msl * 3.28084
-            self.telem_labels["alt_msl"].configure(text=f"{ft:,.0f} ft")
+            acp_vol = None
+            if dref_name:
+                try:
+                    if idx is not None and str(idx).strip() != "" and int(idx) > 0:
+                        acp_vol = values.get(f"{dref_name}[{idx}]", values.get(dref_name))
+                    else:
+                        acp_vol = values.get(dref_name)
+                except Exception:
+                    acp_vol = values.get(dref_name)
 
-        beacon = values.get("sim/cockpit2/switches/beacon_on", values.get("AirbusFBW/BeaconLightsOn"))
-        if beacon is not None:
-            self.telem_labels["beacon"].configure(text="ON" if beacon >= 0.5 else "OFF")
+            # Fallback 1: ToLiss ACP1 rotary knob index 7
+            if acp_vol is None:
+                acp_vol = values.get("AirbusFBW/ACP1RotaryPositions[7]", values.get("AirbusFBW/ACP1RotaryPositions"))
 
-        prk = values.get("sim/cockpit2/controls/parking_brake_ratio", values.get("AirbusFBW/ParkBrake"))
-        if prk is not None:
-            self.telem_labels["parkbrake"].configure(text=f"{prk * 100:.0f}%")
+            # Fallback 2: Standard X-Plane COM1 Audio Volume (works on all default and 3rd-party planes)
+            if acp_vol is None:
+                acp_vol = values.get("sim/cockpit2/radios/actuators/audio_volume_com1")
 
-        belts = values.get("sim/cockpit2/switches/fasten_seat_belts", values.get("AirbusFBW/SeatBeltSignsOn"))
-        if belts is not None:
-            self.telem_labels["seatbelts"].configure(text="ON" if belts >= 0.5 else "OFF")
+            if acp_vol is not None:
+                # Normalize float 0.0 - 1.0 to percentage 0 - 100
+                knob_pct = max(0, min(100, int(float(acp_vol) * 100)))
+                current_slider = int(self.slider_announcement.get())
+                if abs(knob_pct - current_slider) >= 2:
+                    self.slider_announcement.set(knob_pct)
+                    self.lbl_announcement_vol.configure(text=f"{knob_pct}%")
+                    self.audio.set_announcement_volume(knob_pct / 100.0)
 
-        # 4. Periodic Auto-Detection of Aircraft & Livery (every ~4 seconds)
+        # 4. Flashing Cabin Call indicator & Cockpit Answer Detection
+        if self.rule_engine.cabin_call_ringing:
+            cfg = self.rule_engine.active_config or {}
+            hw = cfg.get("hardware_mappings") or {}
+            call_dref = hw.get("cabin_call_annunciator_dataref")
+
+            chk_cab = 0.0
+            if call_dref and call_dref in values:
+                chk_cab = values.get(call_dref, 0.0)
+            else:
+                chk_cab = values.get("AirbusFBW/CheckCabin", values.get("AirbusFBW/CabinReady", 0.0))
+
+            if chk_cab >= 0.5:
+                self.rule_engine.answer_cabin_call()
+            else:
+                # Flash the activity banner to notify pilot
+                now_sec = int(time.time() * 2)
+                if now_sec % 2 == 0:
+                    self.lbl_flight_state.configure(text="📞 [CABIN CALL CHIME] Cabin Calling Flight Deck!", text_color="#f59e0b")
+                else:
+                    self.lbl_flight_state.configure(text="📞 [CABIN CALL CHIME] Press Cockpit Call Button to Answer", text_color="#ef4444")
+
+        # 5. Periodic Auto-Detection of Aircraft & Livery (every ~4 seconds)
         self._detect_counter += 1
         if self._detect_counter >= 16:
             self._detect_counter = 0
             if self.detector and self.sw_auto_detect.get() == 1:
                 self._check_auto_detect()
+
+        # 6. Keep Boarding Start / Complete button state in sync
+        self._update_boarding_button()
 
         self.root.after(250, self._update_loop)
 
@@ -765,8 +1082,97 @@ class CabinAnnouncerGUI:
         except Exception as e:
             pass
 
+    # ---------------------------------------------------------
+    # System Tray Integration
+    # ---------------------------------------------------------
+    def _init_tray(self):
+        """Initializes the background system tray icon and context menu."""
+        try:
+            import pystray
+            from PIL import Image
+
+            png_path = os.path.join(self.base_dir, "app_icon.png")
+            ico_path = os.path.join(self.base_dir, "app_icon.ico")
+            img = None
+            if os.path.exists(png_path):
+                img = Image.open(png_path)
+            elif os.path.exists(ico_path):
+                img = Image.open(ico_path)
+
+            if not img:
+                return
+
+            menu = pystray.Menu(
+                pystray.MenuItem("Show Flight Deck", self._on_tray_show, default=True),
+                pystray.MenuItem("Stop Current Announcement", self._on_tray_stop_ann),
+                pystray.MenuItem("Stop All Audio", self._on_tray_stop_all),
+                pystray.MenuItem("Open Web Config Editor", self._on_tray_web_editor),
+                pystray.Menu.SEPARATOR,
+                pystray.MenuItem("Exit", self._on_tray_quit)
+            )
+            self.tray_icon = pystray.Icon("CabinAnnouncer", img, "X-Plane Cabin Announcer", menu)
+        except Exception:
+            pass
+
+    def _start_tray_thread(self):
+        """Starts the system tray background message loop thread if not already running."""
+        if self.tray_icon is None:
+            self._init_tray()
+        if self.tray_icon and not (self._tray_thread and self._tray_thread.is_alive()):
+            self._tray_thread = threading.Thread(target=self.tray_icon.run, daemon=True)
+            self._tray_thread.start()
+
+    def _on_tray_show(self, icon=None, item=None):
+        self.root.after(0, self._restore_from_tray)
+
+    def _on_tray_stop_ann(self, icon=None, item=None):
+        self.root.after(0, self.audio.stop_announcement)
+        self.append_log("⏹️ Announcement stopped from system tray.")
+
+    def _on_tray_stop_all(self, icon=None, item=None):
+        self.root.after(0, self.audio.stop_all)
+        self.append_log("⏹️ All audio stopped from system tray.")
+
+    def _on_tray_web_editor(self, icon=None, item=None):
+        self.root.after(0, self._open_web_editor)
+
+    def _on_tray_quit(self, icon=None, item=None):
+        self.root.after(0, self._on_close)
+
+    def _minimize_to_tray(self):
+        """Hides the flight deck window completely from the screen and taskbar into the system tray."""
+        self._start_tray_thread()
+        self.root.withdraw()
+        self.append_log("📌 Minimized to system tray. Double-click or right-click the tray icon to restore.")
+
+    def _minimize_window(self):
+        """Minimizes the flight deck window (routes to system tray)."""
+        self._minimize_to_tray()
+
+    def _restore_from_tray(self):
+        """Restores the flight deck window from the system tray and brings it to front."""
+        self.root.deiconify()
+        self.root.lift()
+        apply_window_icon(self.root, self.base_dir)
+        if sys.platform == "win32":
+            try:
+                import ctypes
+                wid = self.root.winfo_id()
+                hwnd = ctypes.windll.user32.GetAncestor(wid, 2) or ctypes.windll.user32.GetParent(wid)
+                if hwnd:
+                    ctypes.windll.user32.ShowWindow(hwnd, 9)  # SW_RESTORE = 9
+                    ctypes.windll.user32.SetForegroundWindow(hwnd)
+            except Exception:
+                pass
+        self.append_log("✨ Restored Flight Deck from system tray.")
+
     def _on_close(self):
         self._save_settings()
+        if self.tray_icon:
+            try:
+                self.tray_icon.stop()
+            except Exception:
+                pass
         self.audio.stop_all()
         self.rule_engine.stop()
         self.udp.stop()

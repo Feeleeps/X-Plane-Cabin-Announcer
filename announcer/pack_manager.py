@@ -29,15 +29,27 @@ STANDARD_SOUND_KEYS = [
     "CallCabinSecureTakeoff",
     "AfterTakeoff",
     "FastenSeatbelt",
-    "TopOfClimbPilot",
-    "CruiseElapsed",
-    "TopOfDescentPilot",
-    "Descent",
-    "Approach",
+    "DescentSeatbelts",
+    "CallCabinSecureLanding",
+    "CrewSeatsLanding",
     "AfterLanding",
     "DisarmDoors",
+    "DisembarkStarted",
     "Deboarding"
 ]
+
+SOUND_ALIASES = {
+    "disembarkstarted": ["disembarkstarted", "deboarding"],
+    "deboarding": ["deboarding", "disembarkstarted"],
+    "descentseatbelts": ["descentseatbelts", "descent", "topofdescentpilot"],
+    "descent": ["descent", "descentseatbelts", "topofdescentpilot"],
+    "topofdescentpilot": ["topofdescentpilot", "descentseatbelts", "descent"],
+    "callcabinsecuretakeoff": ["callcabinsecuretakeoff", "cabinready"],
+    "cabinready": ["cabinready", "callcabinsecuretakeoff"],
+    "crewseatslanding": ["crewseatslanding", "crewseats"],
+    "crewseatstakeoff": ["crewseatstakeoff", "crewseats"],
+    "boardingwelcome": ["boardingwelcome", "boarding"],
+}
 
 SUPPORTED_EXTENSIONS = (".ogg", ".wav", ".mp3", ".flac")
 
@@ -131,8 +143,12 @@ class PackManager:
 
         time_tag = get_current_time_tag(time_hour)
         clean_key = sound_key.strip().lower()
+        target_keys = SOUND_ALIASES.get(clean_key, [clean_key])
+        if clean_key not in target_keys:
+            target_keys = [clean_key] + list(target_keys)
 
-        candidate_files = []
+        # Collect all audio files in the pack
+        pack_audio_files = []
         for root, _, filenames in os.walk(pack_dir):
             for f in filenames:
                 if not f.lower().endswith(SUPPORTED_EXTENSIONS):
@@ -140,40 +156,36 @@ class PackManager:
                 file_stem = os.path.splitext(f)[0]
                 full_path = os.path.join(root, f)
 
-                # Check if this file relates to sound_key
-                # e.g. "BoardingWelcome", "BoardingWelcome[Morning]", "BoardingWelcome1"
-                # Strip bracketed tags and numbers to find base name
+                # Check base sound name
                 base_name = re.sub(r"\[.*?\]", "", file_stem)
                 base_name = re.sub(r"\d+$", "", base_name).strip().lower()
+                pack_audio_files.append((f, full_path, file_stem, base_name))
 
-                if base_name == clean_key:
-                    candidate_files.append((f, full_path, file_stem))
-
-        if not candidate_files:
-            return None
-
-        # Filter by time tag if any file specifically matches current time of day
-        time_matches = []
-        for f, full_path, file_stem in candidate_files:
-            # Check for tag like [Morning], [Evening]
-            if f"[{time_tag.lower()}]" in file_stem.lower():
-                time_matches.append(full_path)
-
-        if time_matches:
-            # If multiple time matches exist (e.g. BoardingWelcome[Morning]1.ogg, BoardingWelcome[Morning]2.ogg), pick random
-            return random.choice(time_matches)
-
-        # Filter out files tagged for a DIFFERENT time of day
         all_tags = ["[morning]", "[afternoon]", "[evening]", "[night]"]
-        general_matches = []
-        for f, full_path, file_stem in candidate_files:
-            stem_lower = file_stem.lower()
-            has_other_tag = any(t in stem_lower for t in all_tags if t != f"[{time_tag.lower()}]")
-            if not has_other_tag:
-                general_matches.append(full_path)
 
-        if general_matches:
-            return random.choice(general_matches)
+        # Evaluate candidate keys in prioritized order
+        for key in target_keys:
+            candidates = [(f, full_path, file_stem) for (f, full_path, file_stem, base_name) in pack_audio_files if base_name == key]
+            if not candidates:
+                continue
 
-        # Fallback to any matching candidate file
-        return random.choice([p for _, p, _ in candidate_files])
+            # 1. Filter by time tag if any file specifically matches current time of day
+            time_matches = [full_path for (f, full_path, file_stem) in candidates if f"[{time_tag.lower()}]" in file_stem.lower()]
+            if time_matches:
+                return random.choice(time_matches)
+
+            # 2. Filter out files tagged for a DIFFERENT time of day
+            general_matches = []
+            for f, full_path, file_stem in candidates:
+                stem_lower = file_stem.lower()
+                has_other_tag = any(t in stem_lower for t in all_tags if t != f"[{time_tag.lower()}]")
+                if not has_other_tag:
+                    general_matches.append(full_path)
+
+            if general_matches:
+                return random.choice(general_matches)
+
+            # 3. Fallback to any matching candidate file for this key
+            return random.choice([p for _, p, _ in candidates])
+
+        return None
